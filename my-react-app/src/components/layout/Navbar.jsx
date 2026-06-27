@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { ChevronDown, ArrowRight } from "lucide-react";
 
-export default function Navbar() {
+export default function Navbar({ onAuthOpen = () => {} }) {
   const [activeDropdown, setActiveDropdown] = useState(null);
 
   // Smooth scroll handler
@@ -117,20 +117,19 @@ export default function Navbar() {
         <div className="flex items-center gap-4 sm:gap-6 text-sm">
           <a 
             href="#login" 
-            onClick={(e) => handleScroll(e, "login-demo")}
+            onClick={(e) => { e.preventDefault(); onAuthOpen(); }}
             className="text-zinc-400 hover:text-white font-medium transition-colors cursor-pointer"
           >
             Log In
           </a>
           
-          <a 
-            href="#get-started" 
-            onClick={(e) => handleScroll(e, "get-started")}
+          <button
+            onClick={onAuthOpen}
             className="inline-flex items-center gap-1 bg-white hover:bg-white/90 text-black font-semibold text-xs px-4 py-2.5 rounded-full transition-all duration-200 select-none shadow-sm cursor-pointer hover:scale-[1.02]"
           >
             Get Started
             <ArrowRight className="w-3.5 h-3.5" />
-          </a>
+          </button>
         </div>
 
       </div>

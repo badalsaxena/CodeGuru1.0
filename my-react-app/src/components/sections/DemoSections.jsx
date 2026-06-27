@@ -1,5 +1,6 @@
 import React from "react";
-import { Sparkles, Code2, Users, Cpu, ShieldAlert, Check } from "lucide-react";
+import { Sparkles, Code2, Users, Cpu, ShieldAlert } from "lucide-react";
+import TextPressure from "../textpressure";
 
 export default function DemoSections() {
   return (
@@ -139,7 +140,7 @@ export default function DemoSections() {
         </div>
       </section>
 
-      {/* 5. LOGIN DEMO SECTION */}
+      {/* 5. LOGIN DEMO SECTION
       <section id="login-demo" className="relative min-h-[60vh] py-20 flex flex-col justify-center border-t border-white/5 bg-zinc-950/20">
         <div className="max-w-sm mx-auto px-6 w-full">
           <div className="p-8 rounded-2xl border border-white/10 bg-black/40 backdrop-blur-sm space-y-6">
@@ -147,30 +148,70 @@ export default function DemoSections() {
               <h3 className="text-lg font-bold text-white">Account Log In</h3>
               <p className="text-[11px] text-zinc-500 mt-1">Access the CodeGuru educator console</p>
             </div>
-            
             <div className="space-y-4">
               <div>
                 <label className="block text-[10px] uppercase font-bold text-zinc-400 mb-1">Email address</label>
-                <input 
-                  type="email" 
-                  placeholder="name@university.edu" 
+                <input
+                  type="email"
+                  placeholder="name@university.edu"
                   className="w-full bg-zinc-900 border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
                 />
               </div>
               <div>
                 <label className="block text-[10px] uppercase font-bold text-zinc-400 mb-1">Password</label>
-                <input 
-                  type="password" 
-                  placeholder="••••••••" 
+                <input
+                  type="password"
+                  placeholder="••••••••"
                   className="w-full bg-zinc-900 border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
                 />
               </div>
             </div>
-
             <button className="w-full bg-emerald-500 hover:bg-emerald-600 text-black text-xs font-bold py-2.5 rounded-lg transition-colors">
               Access Console
             </button>
           </div>
+        </div>
+      </section> */}
+
+      {/* 6. TEXT PRESSURE — CLOSING SECTION (last on page) */}
+      <section
+        id="text-pressure-closing"
+        className="relative border-t border-white/5 bg-black overflow-hidden"
+      >
+        {/* Subtle emerald glow behind text */}
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <div className="w-[600px] h-[200px] bg-emerald-500/10 rounded-full blur-[100px]" />
+        </div>
+
+        {/* Label above */}
+        <div className="relative z-10 pt-16 text-center">
+          <p className="text-[10px] uppercase tracking-[0.3em] text-zinc-600 font-semibold mb-2">
+            Move your cursor over the text
+          </p>
+        </div>
+
+        {/* TextPressure interactive display */}
+        <div className="relative z-10 w-full h-[220px] px-4">
+          <TextPressure
+            text="CODEGURU"
+            flex={true}
+            width={true}
+            weight={true}
+            italic={true}
+            alpha={false}
+            stroke={false}
+            scale={false}
+            textColor="#ffffff"
+            strokeColor="#10b981"
+            minFontSize={36}
+          />
+        </div>
+
+        {/* Tagline below */}
+        <div className="relative z-10 pb-16 text-center">
+          <p className="text-xs text-zinc-600 tracking-widest uppercase font-medium">
+            AI-Powered Coding Assessment · Built for the Future
+          </p>
         </div>
       </section>
 
