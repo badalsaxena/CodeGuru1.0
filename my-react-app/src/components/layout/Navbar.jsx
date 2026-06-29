@@ -127,7 +127,7 @@ export default function Navbar({ onAuthOpen = () => {} }) {
             onClick={onAuthOpen}
             className="inline-flex items-center gap-1 bg-white hover:bg-white/90 text-black font-semibold text-xs px-4 py-2.5 rounded-full transition-all duration-200 select-none shadow-sm cursor-pointer hover:scale-[1.02]"
           >
-            Get Started
+            ADMIN LOGIN
             <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>
