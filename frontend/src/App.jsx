@@ -4,8 +4,9 @@ import DemoSections from "@/components/sections/DemoSections";
 import AuthPage from "@/pages/AuthPage";
 import { Button } from "@/components/ui/button";
 import DarkVeil from "@/components/ui/Darkveil";
-import TeacherDashboard from "@/components/dashboard/TeacherDashboard";
-import StudentDashboard from "@/components/student-dashboard/StudentDashboard";
+import TeacherPage from "@/pages/TeacherPage";
+import StudentPage from "@/pages/StudentPage";
+import AdminPage from "@/pages/AdminPage";
 
 const App = () => {
   const [showAuth, setShowAuth] = useState(false);
@@ -34,7 +35,7 @@ const App = () => {
             Open Student Dashboard
           </Button>
         </div>
-        <TeacherDashboard />
+        <TeacherPage />
       </div>
     );
   }
@@ -57,8 +58,46 @@ const App = () => {
           >
             Open Teacher Dashboard
           </Button>
+          <Button
+            variant="outline"
+            className="rounded-full border-cyan-400/30 bg-cyan-500/10 text-sm text-cyan-300 shadow-lg backdrop-blur"
+            onClick={() => toggleView("admin")}
+          >
+            Open Admin Dashboard
+          </Button>
         </div>
-        <StudentDashboard />
+        <StudentPage />
+      </div>
+    );
+  }
+
+  if (view === "admin") {
+    return (
+      <div className="relative min-h-screen bg-zinc-950">
+        <div className="fixed right-4 top-4 z-50 flex gap-2">
+          <Button
+            variant="outline"
+            className="rounded-full border-white/10 bg-zinc-900/80 text-sm text-white shadow-lg backdrop-blur"
+            onClick={() => toggleView("landing")}
+          >
+            Back to Landing
+          </Button>
+          <Button
+            variant="outline"
+            className="rounded-full border-emerald-400/30 bg-emerald-500/10 text-sm text-emerald-300 shadow-lg backdrop-blur"
+            onClick={() => toggleView("teacher")}
+          >
+            Open Teacher Dashboard
+          </Button>
+          <Button
+            variant="outline"
+            className="rounded-full border-cyan-400/30 bg-cyan-500/10 text-sm text-cyan-300 shadow-lg backdrop-blur"
+            onClick={() => toggleView("student")}
+          >
+            Open Student Dashboard
+          </Button>
+        </div>
+        <AdminPage />
       </div>
     );
   }
@@ -94,6 +133,13 @@ const App = () => {
           onClick={() => toggleView("student")}
         >
           Open Student Dashboard
+        </Button>
+        <Button
+          variant="outline"
+          className="rounded-full border-violet-400/30 bg-violet-500/10 text-sm text-violet-300 shadow-lg backdrop-blur"
+          onClick={() => toggleView("admin")}
+        >
+          Open Admin Dashboard
         </Button>
       </div>
 
