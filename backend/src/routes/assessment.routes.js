@@ -1,0 +1,28 @@
+const express = require("express");
+
+const router = express.Router();
+
+const verifyToken = require("../middleware/auth.middleware");
+
+const {
+  createAssessment,
+  getAllAssessments,
+  getAssessmentById,
+  updateAssessment,
+  deleteAssessment,
+} = require("../controllers/assessment.controller");
+
+// Create Assessment
+router.post("/", verifyToken, createAssessment);
+
+// Get All Assessments
+router.get("/", verifyToken, getAllAssessments);
+
+// Get Assessment by ID
+router.get("/:id", verifyToken, getAssessmentById);
+// Update Assessment
+router.put("/:id", verifyToken, updateAssessment);
+// Delete Assessment
+router.delete("/:id", verifyToken, deleteAssessment);
+
+module.exports = router;
