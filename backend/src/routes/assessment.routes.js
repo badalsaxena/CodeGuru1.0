@@ -10,6 +10,7 @@ const {
   getAssessmentById,
   updateAssessment,
   deleteAssessment,
+  addQuestionsToAssessment
 } = require("../controllers/assessment.controller");
 
 // Create Assessment
@@ -24,5 +25,7 @@ router.get("/:id", verifyToken, getAssessmentById);
 router.put("/:id", verifyToken, updateAssessment);
 // Delete Assessment
 router.delete("/:id", verifyToken, deleteAssessment);
+// Add Questions to Assessment
+router.post("/:id/questions", verifyToken, addQuestionsToAssessment);
 
 module.exports = router;

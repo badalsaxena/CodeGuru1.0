@@ -29,6 +29,14 @@ const assessmentSchema = new mongoose.Schema(
       default: 100,
     },
 
+    // Questions linked to this assessment
+    questions: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Question",
+      },
+    ],
+
     startTime: {
       type: Date,
     },

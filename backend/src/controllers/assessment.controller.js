@@ -70,13 +70,19 @@ const getAllAssessments = async (req, res) => {
     });
   }
 };
+
 // ====================== GET ASSESSMENT BY ID ======================
 
 const getAssessmentById = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const assessment = await Assessment.findById(id);
+    const assessment = await Assessment.findById(id)
+      .populate("teacher", "fullName email")
+      .populate(
+        "questions",
+        "title description difficulty marks status tags"
+      );
 
     if (!assessment) {
       return res.status(404).json({
@@ -99,6 +105,7 @@ const getAssessmentById = async (req, res) => {
     });
   }
 };
+
 // ====================== UPDATE ASSESSMENT ======================
 
 const updateAssessment = async (req, res) => {
@@ -146,6 +153,7 @@ const updateAssessment = async (req, res) => {
     });
   }
 };
+
 // ====================== DELETE ASSESSMENT ======================
 
 const deleteAssessment = async (req, res) => {
@@ -185,6 +193,70 @@ const deleteAssessment = async (req, res) => {
     });
   }
 };
+
+// ====================== ADD QUESTIONS TO ASSESSMENT ======================
+
+const addQuestionsToAssessment = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { questionIds } = req.body;
+
+    if (!questionIds || !Array.isArray(questionIds)) {
+      return res.status(400).json({
+        success: false,
+        message: "questionIds array is required",
+      });
+    }
+
+    const assessment = await Assessment.findById(id);
+
+    if (!assessment) {
+      return res.status(404).json({
+        success: false,
+        message: "Assessment not found",
+      });
+    }
+
+    if (assessment.teacher.toString() !== req.user.id) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not authorized",
+      });
+    }
+
+    const existingQuestions = assessment.questions.map((q) => q.toString());
+
+    questionIds.forEach((questionId) => {
+      if (!existingQuestions.includes(questionId)) {
+        assessment.questions.push(questionId);
+      }
+    });
+
+    await assessment.save();
+
+    const updatedAssessment = await Assessment.findById(id)
+      .populate("teacher", "fullName email")
+      .populate(
+        "questions",
+        "title description difficulty marks status tags"
+      );
+
+    res.status(200).json({
+      success: true,
+      message: "Questions Added Successfully",
+      assessment: updatedAssessment,
+    });
+
+  } catch (error) {
+    console.error("❌ Add Questions Error:", error);
+
+    res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+    });
+  }
+};
+
 // ====================== EXPORTS ======================
 
 module.exports = {
@@ -193,4 +265,5 @@ module.exports = {
   getAssessmentById,
   updateAssessment,
   deleteAssessment,
+  addQuestionsToAssessment,
 };
