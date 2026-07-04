@@ -9,6 +9,7 @@ const assessmentRoutes = require("./routes/assessment.routes");
 const questionRoutes = require("./routes/question.routes");
 const studentRoutes = require("./routes/student.routes");
 const submissionRoutes = require("./routes/submission.routes");
+const attemptRoutes = require("./routes/attempt.routes");
 
 const app = express();
 
@@ -28,6 +29,7 @@ app.use("/api/v1/assessments", assessmentRoutes);
 app.use("/api/v1/questions", questionRoutes);
 app.use("/api/v1/student", studentRoutes);
 app.use("/api/v1/submissions", submissionRoutes);
+app.use("/api/v1/attempts", attemptRoutes);
 
 // ======================= Test Route =======================
 
