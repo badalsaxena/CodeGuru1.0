@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Navbar from "@/components/layout/Navbar";
 import DemoSections from "@/components/sections/DemoSections";
 import AuthPage from "@/pages/AuthPage";
@@ -11,6 +11,34 @@ import AdminPage from "@/pages/AdminPage";
 const App = () => {
   const [showAuth, setShowAuth] = useState(false);
   const [view, setView] = useState("landing");
+  useEffect(() => {
+  const token = localStorage.getItem("token");
+  const user = JSON.parse(localStorage.getItem("user"));
+
+  if (token && user) {
+    if (user.role === "teacher") {
+      setView("teacher");
+    } else if (user.role === "student") {
+      setView("student");
+    } else if (user.role === "admin") {
+      setView("admin");
+    }
+  }
+}, []);
+  React.useEffect(() => {
+  const token = localStorage.getItem("token");
+  const user = JSON.parse(localStorage.getItem("user"));
+
+  if (token && user) {
+    if (user.role === "teacher") {
+      setView("teacher");
+    } else if (user.role === "student") {
+      setView("student");
+    } else if (user.role === "admin") {
+      setView("admin");
+    }
+  }
+}, []);
 
   const toggleView = (target) => {
     setView(target);

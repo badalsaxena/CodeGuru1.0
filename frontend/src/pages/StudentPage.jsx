@@ -23,6 +23,19 @@ import {
 const StudentPage = () => {
   const [activeSection, setActiveSection] = useState("dashboard");
 
+    const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    window.location.reload();
+  };
+  
+  const token = localStorage.getItem("token");
+const user = JSON.parse(localStorage.getItem("user"));
+
+if (!token || user?.role !== "student") {
+  return null;
+}
+
   const filteredProblems = useMemo(() => practiceProblems, []);
 
   const renderContent = () => {
@@ -71,9 +84,22 @@ const StudentPage = () => {
       <div className="mx-auto flex max-w-7xl flex-col gap-6 lg:flex-row">
         <Sidebar activeSection={activeSection} onSectionChange={setActiveSection} navItems={studentNavItems} />
         <main className="flex-1 space-y-6">
-          <Header title="Student Dashboard" subtitle="Frontend-only learning workspace with data-driven sections." />
-          {renderContent()}
-        </main>
+  <div className="flex items-center justify-between">
+    <Header
+      title="Student Dashboard"
+      subtitle="Frontend-only learning workspace with data-driven sections."
+    />
+
+    <button
+      onClick={handleLogout}
+      className="rounded-xl bg-red-500 px-4 py-2 text-sm font-semibold text-white hover:bg-red-600"
+    >
+      Logout
+    </button>
+  </div>
+
+  {renderContent()}
+</main>
       </div>
     </div>
   );

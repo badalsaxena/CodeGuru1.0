@@ -31,6 +31,18 @@ const iconMap = {
 
 const AdminPage = () => {
   const [activeSection, setActiveSection] = useState("dashboard");
+  const handleLogout = () => {
+  localStorage.removeItem("token");
+  localStorage.removeItem("user");
+  window.location.reload();
+};
+
+const token = localStorage.getItem("token");
+const user = JSON.parse(localStorage.getItem("user"));
+
+if (!token || user?.role !== "admin") {
+  return null;
+}
 
   const content = useMemo(() => {
     switch (activeSection) {
@@ -241,15 +253,28 @@ const AdminPage = () => {
 
         <main className="flex-1">
           <header className="mb-4 flex flex-col gap-3 rounded-[28px] border border-white/10 bg-zinc-950/80 p-4 shadow-2xl shadow-black/20 backdrop-blur-xl sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p className="text-sm text-zinc-400">Platform operations and oversight</p>
-              <h1 className="text-xl font-semibold text-white">Admin dashboard</h1>
-            </div>
-            <label className="flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-zinc-400">
-              <Search size={16} />
-              <input className="w-full bg-transparent outline-none placeholder:text-zinc-500 sm:w-48" placeholder="Search" />
-            </label>
-          </header>
+  <div>
+    <p className="text-sm text-zinc-400">Platform operations and oversight</p>
+    <h1 className="text-xl font-semibold text-white">Admin dashboard</h1>
+  </div>
+
+  <div className="flex items-center gap-3">
+    <label className="flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-zinc-400">
+      <Search size={16} />
+      <input
+        className="w-full bg-transparent outline-none placeholder:text-zinc-500 sm:w-48"
+        placeholder="Search"
+      />
+    </label>
+
+    <button
+      onClick={handleLogout}
+      className="rounded-xl bg-red-500 px-4 py-2 text-sm font-semibold text-white hover:bg-red-600"
+    >
+      Logout
+    </button>
+  </div>
+</header>
 
           {content}
         </main>

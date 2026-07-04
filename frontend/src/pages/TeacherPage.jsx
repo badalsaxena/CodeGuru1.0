@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Sidebar from "@/components/dashboard/Sidebar";
 import Header from "@/components/dashboard/Header";
 import DashboardCards from "@/components/dashboard/DashboardCards";
@@ -7,9 +7,9 @@ import LiveMonitoring from "@/components/dashboard/LiveMonitoring";
 import AlertPanel from "@/components/dashboard/AlertPanel";
 import Reports from "@/components/dashboard/Reports";
 import SettingsPanel from "@/components/dashboard/SettingsPanel";
+import { getQuestions } from "@/services/questionService";
 import {
   teacherStats,
-  codingQuestionsSeed,
   monitoringStudents,
   aiAlerts,
   performanceSeries,
@@ -20,16 +20,61 @@ import {
 
 const TeacherPage = () => {
   const [activeSection, setActiveSection] = useState("dashboard");
+  const handleLogout = () => {
+  localStorage.removeItem("token");
+  localStorage.removeItem("user");
+  window.location.reload();
+};
+const token = localStorage.getItem("token");
+const user = JSON.parse(localStorage.getItem("user"));
+
+if (!token || user?.role !== "teacher") {
+  return null;
+}
+ const [questions, setQuestions] = useState([]);
+const [loading, setLoading] = useState(true);
+const [error, setError] = useState("");
+
+
   const [searchTerm, setSearchTerm] = useState("");
   const [difficultyFilter, setDifficultyFilter] = useState("All");
 
-  const filteredQuestions = useMemo(() => {
-    return codingQuestionsSeed.filter((question) => {
-      const matchesSearch = question.title.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesDifficulty = difficultyFilter === "All" || question.difficulty === difficultyFilter;
-      return matchesSearch && matchesDifficulty;
-    });
-  }, [difficultyFilter, searchTerm]);
+ 
+useEffect(() => {
+  fetchQuestions();
+}, []);
+
+const fetchQuestions = async () => {
+  try {
+    setLoading(true);
+
+    const data = await getQuestions();
+
+    console.log("Questions from backend:", data);
+
+    setQuestions(data.questions || []);
+  } catch (err) {
+    setError("Failed to load questions");
+    console.error(err);
+  } finally {
+    setLoading(false);
+  }
+};
+
+ const filteredQuestions = useMemo(() => {
+  return questions.filter((question) => {
+    const matchesSearch =
+      question.title
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase());
+
+    const matchesDifficulty =
+      difficultyFilter === "All" ||
+      question.difficulty === difficultyFilter;
+
+    return matchesSearch && matchesDifficulty;
+  });
+}, [questions, searchTerm, difficultyFilter]);
 
   const renderContent = () => {
     switch (activeSection) {
@@ -96,14 +141,32 @@ const TeacherPage = () => {
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(52,211,153,0.18),transparent_35%),linear-gradient(135deg,#020617_0%,#0f172a_50%,#020617_100%)] p-4 text-zinc-100 md:p-6 lg:p-8">
-      <div className="mx-auto flex max-w-7xl flex-col gap-6 lg:flex-row">
-        <Sidebar activeSection={activeSection} onSectionChange={setActiveSection} navItems={navItems} />
-        <main className="flex-1 space-y-6">
-          <Header title="Teacher Dashboard" subtitle="Frontend-only SaaS workspace with reusable sections and dummy data." />
-          {renderContent()}
-        </main>
+  <div className="mx-auto flex max-w-7xl flex-col gap-6 lg:flex-row">
+    <Sidebar
+      activeSection={activeSection}
+      onSectionChange={setActiveSection}
+      navItems={navItems}
+    />
+
+    <main className="flex-1 space-y-6">
+      <Header
+        title="Teacher Dashboard"
+        subtitle="Frontend-only SaaS workspace with reusable sections and dummy data."
+      />
+
+      <div className="flex justify-end">
+        <button
+          onClick={handleLogout}
+          className="rounded-xl bg-red-500 px-4 py-2 text-sm font-semibold text-white hover:bg-red-600"
+        >
+          Logout
+        </button>
       </div>
-    </div>
+
+      {renderContent()}
+    </main>
+  </div>
+</div>
   );
 };
 

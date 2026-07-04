@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react";
+import { loginUser, registerUser } from "../services/authService";
 import {
   Eye, EyeOff, ArrowLeft, Check, Mail, Lock, User,
   Shield, GraduationCap, BookOpen, AlertCircle,
@@ -119,25 +120,67 @@ export default function AuthPage({ onClose }) {
   };
 
   /* ─── submit ─── */
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!validate()) return;
-    setLoading(true);
-    await new Promise(r => setTimeout(r, 1800)); // simulate API
-    setLoading(false);
-    if (tab === "signup") { setView("verify"); }
-    else { setSuccessMsg("Welcome back! Redirecting…"); }
-  };
+const handleSubmit = async (e) => {
+  e.preventDefault();
 
-  const handleForgot = async (e) => {
-    e.preventDefault();
-    if (!forgotEmail.trim()) { setErrors({ forgotEmail: "Enter your email." }); return; }
-    setLoading(true);
-    await new Promise(r => setTimeout(r, 1400));
-    setLoading(false);
-    setSuccessMsg("Reset link sent! Check your inbox.");
-  };
+  if (!validate()) return;
 
+  setLoading(true);
+  setErrors({});
+  setSuccessMsg("");
+
+  try {
+    if (tab === "signup") {
+      const data = await registerUser({
+        fullName: name,
+        email,
+        password,
+        role,
+      });
+
+      setSuccessMsg(
+        data.message || "Account created successfully!"
+      );
+
+      setTimeout(() => {
+        setView("verify");
+      }, 1000);
+
+    } else {
+      const data = await loginUser({
+        email,
+        password,
+      });
+
+      setSuccessMsg(
+        data.message || "Login successful!"
+      );
+
+      if (data.token) {
+        localStorage.setItem("token", data.token);
+      }
+
+      if (data.user) {
+        localStorage.setItem(
+          "user",
+          JSON.stringify(data.user)
+        );
+      }
+
+      setTimeout(() => {
+  window.location.reload();
+}, 1000);
+    }
+  } catch (error) {
+    setErrors({
+      general:
+        error.message ||
+        "Something went wrong. Please try again.",
+    });
+  } finally {
+    setLoading(false);
+  }
+};
   /* ──────────────────────────── render ──────────────────────────── */
   return (
     <div className="fixed inset-0 z-[200] flex items-stretch bg-black">
@@ -310,6 +353,17 @@ export default function AuthPage({ onClose }) {
               )}
 
               <form onSubmit={handleSubmit} noValidate className="space-y-4">
+
+{errors.general && (
+  <div className="flex items-center gap-3 p-3.5 bg-red-500/10 border border-red-500/20 rounded-xl">
+    <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
+    <p className="text-xs text-red-300">
+      {errors.general}
+    </p>
+  </div>
+)}
+
+
 
                 {/* ── SIGNUP: role selector ── */}
                 {tab === "signup" && (
