@@ -78,6 +78,44 @@ const submissionSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+        // ---------------- Judge0 ----------------
+
+    judge0Token: {
+      type: String,
+      default: "",
+    },
+
+    stdout: {
+      type: String,
+      default: "",
+    },
+
+    stderr: {
+      type: String,
+      default: "",
+    },
+
+    compilerOutput: {
+      type: String,
+      default: "",
+    },
+
+    // Final Submission
+    isFinalSubmission: {
+      type: Boolean,
+      default: false,
+    },
+
+    // Last Run Output
+    lastRunStatus: {
+      type: String,
+      default: "",
+    },
+
+    lastRunOutput: {
+      type: String,
+      default: "",
+    },
   },
   {
     timestamps: true,

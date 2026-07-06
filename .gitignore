@@ -4,3 +4,16 @@ dist/
 coverage/
 .env
 .DS_Store
+.codex/
+.agents/
+# Piston Compiler Repository
+piston/
+
+# Environment Files
+.env
+
+# Node Modules
+node_modules/
+
+# Logs
+*.log

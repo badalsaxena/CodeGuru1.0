@@ -1,15 +1,11 @@
 const Submission = require("../models/Submission.model");
+const Attempt = require("../models/Attempt.model");
 
 // ====================== CREATE SUBMISSION ======================
 
 const createSubmission = async (req, res) => {
   try {
-    const {
-      assessment,
-      question,
-      language,
-      code,
-    } = req.body;
+    const { assessment, question, language, code } = req.body;
 
     // Validation
     if (!assessment || !question || !language || !code) {
@@ -19,6 +15,7 @@ const createSubmission = async (req, res) => {
       });
     }
 
+    // Create Submission
     const submission = await Submission.create({
       student: req.user.id,
       assessment,
@@ -26,6 +23,35 @@ const createSubmission = async (req, res) => {
       language,
       code,
     });
+
+    // Find Active Attempt
+    const attempt = await Attempt.findOne({
+      student: req.user.id,
+      assessment,
+      status: "in_progress",
+    });
+
+    if (attempt) {
+      // Get previous submissions of this attempt
+      const previousSubmissions = await Submission.find({
+        _id: { $in: attempt.submissions },
+      });
+
+      // Check if this question was already submitted
+      const alreadySubmitted = previousSubmissions.some(
+        (sub) => sub.question.toString() === question
+      );
+
+      // Always save submission reference
+      attempt.submissions.push(submission._id);
+
+      // Increase solvedQuestions only once per unique question
+      if (!alreadySubmitted) {
+        attempt.solvedQuestions += 1;
+      }
+
+      await attempt.save();
+    }
 
     res.status(201).json({
       success: true,
@@ -43,7 +69,7 @@ const createSubmission = async (req, res) => {
   }
 };
 
-// ====================== GET STUDENT SUBMISSIONS ======================
+// ====================== GET MY SUBMISSIONS ======================
 
 const getMySubmissions = async (req, res) => {
   try {
