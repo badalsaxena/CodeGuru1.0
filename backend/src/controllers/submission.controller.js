@@ -1,5 +1,6 @@
 const Submission = require("../models/Submission.model");
 const Attempt = require("../models/Attempt.model");
+const { evaluateSubmission } = require("../services/evaluation.service");
 
 // ====================== CREATE SUBMISSION ======================
 
@@ -7,7 +8,6 @@ const createSubmission = async (req, res) => {
   try {
     const { assessment, question, language, code } = req.body;
 
-    // Validation
     if (!assessment || !question || !language || !code) {
       return res.status(400).json({
         success: false,
@@ -15,16 +15,40 @@ const createSubmission = async (req, res) => {
       });
     }
 
-    // Create Submission
+    // Evaluate against hidden test cases
+    const evaluation = await evaluateSubmission({
+      questionId: question,
+      language,
+      code,
+    });
+
+    // Decide submission status
+    let submissionStatus = "wrong_answer";
+
+    if (evaluation.passed === evaluation.total) {
+      submissionStatus = "accepted";
+    }
+
+    // Save submission
     const submission = await Submission.create({
       student: req.user.id,
       assessment,
       question,
       language,
       code,
+
+      score: evaluation.score,
+
+      passedTestCases: evaluation.passed,
+      totalTestCases: evaluation.total,
+
+      executionTime: evaluation.executionTime,
+      memoryUsed: evaluation.memoryUsed,
+
+      status: submissionStatus,
     });
 
-    // Find Active Attempt
+    // Update Attempt
     const attempt = await Attempt.findOne({
       student: req.user.id,
       assessment,
@@ -32,20 +56,16 @@ const createSubmission = async (req, res) => {
     });
 
     if (attempt) {
-      // Get previous submissions of this attempt
       const previousSubmissions = await Submission.find({
         _id: { $in: attempt.submissions },
       });
 
-      // Check if this question was already submitted
       const alreadySubmitted = previousSubmissions.some(
         (sub) => sub.question.toString() === question
       );
 
-      // Always save submission reference
       attempt.submissions.push(submission._id);
 
-      // Increase solvedQuestions only once per unique question
       if (!alreadySubmitted) {
         attempt.solvedQuestions += 1;
       }
@@ -53,18 +73,21 @@ const createSubmission = async (req, res) => {
       await attempt.save();
     }
 
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
-      message: "Submission Created Successfully",
+      message: "Submission Evaluated Successfully",
+
+      evaluation,
+
       submission,
     });
 
   } catch (error) {
     console.error("❌ Create Submission Error:", error);
 
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
-      message: "Internal Server Error",
+      message: error.message,
     });
   }
 };
@@ -80,7 +103,7 @@ const getMySubmissions = async (req, res) => {
       .populate("assessment", "title")
       .sort({ createdAt: -1 });
 
-    res.status(200).json({
+  return res.status(200).json({
       success: true,
       count: submissions.length,
       submissions,
@@ -89,7 +112,7 @@ const getMySubmissions = async (req, res) => {
   } catch (error) {
     console.error("❌ Get Submissions Error:", error);
 
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: "Internal Server Error",
     });
@@ -114,7 +137,7 @@ const getSubmissionById = async (req, res) => {
       });
     }
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       submission,
     });
@@ -122,7 +145,7 @@ const getSubmissionById = async (req, res) => {
   } catch (error) {
     console.error("❌ Get Submission Error:", error);
 
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: "Internal Server Error",
     });

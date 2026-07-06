@@ -1,5 +1,26 @@
 const mongoose = require("mongoose");
 
+const TestCaseSchema = new mongoose.Schema(
+  {
+    input: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    output: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    explanation: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+  },
+  { _id: false }
+);
+
 const questionSchema = new mongoose.Schema(
   {
     title: {
@@ -11,6 +32,7 @@ const questionSchema = new mongoose.Schema(
     description: {
       type: String,
       required: true,
+      trim: true,
     },
 
     difficulty: {
@@ -22,38 +44,50 @@ const questionSchema = new mongoose.Schema(
     marks: {
       type: Number,
       default: 10,
+      min: 1,
     },
 
     tags: [
       {
         type: String,
+        trim: true,
       },
     ],
 
     constraints: {
       type: String,
+      default: "",
     },
 
-    sampleTestCases: [
-      {
-        input: String,
-        output: String,
-        explanation: String,
-      },
-    ],
+    // Public Test Cases (Visible to Students)
+    sampleTestCases: {
+      type: [TestCaseSchema],
+      default: [],
+    },
 
-    hiddenTestCases: [
-      {
-        input: String,
-        output: String,
-      },
-    ],
+    // Hidden Test Cases (Used for Evaluation Only)
+    hiddenTestCases: {
+      type: [TestCaseSchema],
+      default: [],
+    },
 
     boilerplate: {
-      javascript: String,
-      python: String,
-      cpp: String,
-      java: String,
+      javascript: {
+        type: String,
+        default: "",
+      },
+      python: {
+        type: String,
+        default: "",
+      },
+      cpp: {
+        type: String,
+        default: "",
+      },
+      java: {
+        type: String,
+        default: "",
+      },
     },
 
     supportedLanguages: [
@@ -64,12 +98,12 @@ const questionSchema = new mongoose.Schema(
 
     timeLimit: {
       type: Number,
-      default: 1,
+      default: 1, // seconds
     },
 
     memoryLimit: {
       type: Number,
-      default: 256,
+      default: 256, // MB
     },
 
     status: {

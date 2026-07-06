@@ -7,24 +7,40 @@ const createQuestion = async (req, res) => {
     const {
       title,
       description,
-      difficulty,
-      marks,
-      tags,
-      constraints,
-      sampleTestCases,
-      hiddenTestCases,
-      boilerplate,
-      supportedLanguages,
-      timeLimit,
-      memoryLimit,
-      status,
+      difficulty = "Easy",
+      marks = 10,
+      tags = [],
+      constraints = "",
+      sampleTestCases = [],
+      hiddenTestCases = [],
+      boilerplate = {},
+      supportedLanguages = [],
+      timeLimit = 1,
+      memoryLimit = 256,
+      status = "draft",
     } = req.body;
 
-    // Validation
+    // Basic Validation
     if (!title || !description) {
       return res.status(400).json({
         success: false,
         message: "Title and Description are required",
+      });
+    }
+
+    // At least one public test case
+    if (sampleTestCases.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "At least one sample test case is required",
+      });
+    }
+
+    // At least one hidden test case
+    if (hiddenTestCases.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "At least one hidden test case is required",
       });
     }
 
@@ -45,7 +61,7 @@ const createQuestion = async (req, res) => {
       createdBy: req.user.id,
     });
 
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       message: "Question Created Successfully",
       question,
@@ -54,7 +70,7 @@ const createQuestion = async (req, res) => {
   } catch (error) {
     console.error("❌ Create Question Error:", error);
 
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: "Internal Server Error",
     });
@@ -68,7 +84,7 @@ const getAllQuestions = async (req, res) => {
       createdBy: req.user.id,
     }).sort({ createdAt: -1 });
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       count: questions.length,
       questions,
@@ -77,7 +93,7 @@ const getAllQuestions = async (req, res) => {
   } catch (error) {
     console.error("❌ Get Questions Error:", error);
 
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: "Internal Server Error",
     });
@@ -98,7 +114,7 @@ const getQuestionById = async (req, res) => {
       });
     }
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       question,
     });
@@ -106,7 +122,7 @@ const getQuestionById = async (req, res) => {
   } catch (error) {
     console.error("❌ Get Question By ID Error:", error);
 
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: "Internal Server Error",
     });
@@ -144,7 +160,7 @@ const updateQuestion = async (req, res) => {
       }
     );
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       message: "Question Updated Successfully",
       question: updatedQuestion,
@@ -153,7 +169,7 @@ const updateQuestion = async (req, res) => {
   } catch (error) {
     console.error("❌ Update Question Error:", error);
 
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: "Internal Server Error",
     });
@@ -184,7 +200,7 @@ const deleteQuestion = async (req, res) => {
 
     await Question.findByIdAndDelete(id);
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       message: "Question Deleted Successfully",
     });
@@ -192,7 +208,7 @@ const deleteQuestion = async (req, res) => {
   } catch (error) {
     console.error("❌ Delete Question Error:", error);
 
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: "Internal Server Error",
     });

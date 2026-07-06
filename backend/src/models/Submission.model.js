@@ -25,10 +25,15 @@ const submissionSchema = new mongoose.Schema(
 
     // Programming Language
     language: {
-      type: String,
-      enum: ["JavaScript", "Python", "Java", "C++"],
-      required: true,
-    },
+  type: String,
+  enum: [
+    "javascript",
+    "python",
+    "java",
+    "c++",
+  ],
+  required: true,
+},
 
     // Student Code
     code: {
