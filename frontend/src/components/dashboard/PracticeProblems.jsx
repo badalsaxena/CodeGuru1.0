@@ -19,20 +19,24 @@ const PracticeProblems = ({ problems }) => {
             <div className="flex items-start justify-between gap-2">
               <div>
                 <h3 className="text-lg font-semibold text-white">{problem.title}</h3>
-                <p className="mt-1 text-sm text-zinc-400">{problem.topic}</p>
+                <p className="mt-1 text-sm text-zinc-400 line-clamp-1">{problem.description}</p>
               </div>
               <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${problem.difficulty === "Easy" ? "bg-emerald-500/15 text-emerald-300" : problem.difficulty === "Medium" ? "bg-amber-500/15 text-amber-300" : "bg-rose-500/15 text-rose-300"}`}>
                 {problem.difficulty}
               </span>
             </div>
             <div className="mt-4 space-y-2 text-sm text-zinc-400">
-              <p>Status: {problem.status}</p>
-              <p>Estimated Time: {problem.estimatedTime}</p>
-              <p>Teacher: {problem.teacher}</p>
+              <p>Marks: {problem.marks}</p>
+              <p>Time Limit: {problem.timeLimit}s</p>
+              <p>Memory: {problem.memoryLimit}MB</p>
             </div>
             <div className="mt-4 flex gap-2">
-              <button className="rounded-full bg-emerald-500 px-3 py-1.5 text-sm font-medium text-black">Solve Problem</button>
-              <button className="rounded-full border border-white/10 px-3 py-1.5 text-sm text-zinc-300">View Details</button>
+              <button
+                onClick={() => problem.onSolve && problem.onSolve()}
+                className="rounded-full bg-emerald-500 px-3 py-1.5 text-sm font-medium text-black transition hover:bg-emerald-400"
+              >
+                Solve Problem
+              </button>
             </div>
           </div>
         ))}

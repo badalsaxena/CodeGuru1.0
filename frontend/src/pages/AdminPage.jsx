@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useCallback } from "react";
 import {
   BarChart3,
   CheckCircle2,
@@ -10,39 +10,116 @@ import {
   ShieldCheck,
   Users,
   Users2,
+  Loader2,
+  UserCheck,
+  UserX,
+  RefreshCw,
 } from "lucide-react";
 import {
   approvalRequests,
-  dashboardStats,
   profileSettings,
   sidebarItems,
-  testData,
-  userManagementUsers,
 } from "@/data/adminData";
+import API from "@/utils/api";
+import { getAssessments } from "@/services/assessmentService";
 
 const iconMap = {
-  LayoutGrid,
-  CheckCircle2,
-  Users2,
-  BarChart3,
-  ClipboardCheck,
-  SettingsIcon,
+  dashboard: LayoutGrid,
+  approvals: CheckCircle2,
+  management: Users2,
+  analytics: BarChart3,
+  tests: ClipboardCheck,
+  settings: SettingsIcon,
+};
+
+const ROLE_STYLES = {
+  student: "bg-cyan-500/10 text-cyan-300",
+  teacher: "bg-emerald-500/10 text-emerald-300",
+  admin: "bg-violet-500/10 text-violet-300",
 };
 
 const AdminPage = () => {
   const [activeSection, setActiveSection] = useState("dashboard");
+
+  const token = localStorage.getItem("token");
+  const user = JSON.parse(localStorage.getItem("user"));
+
+  if (!token || user?.role !== "admin") {
+    return null;
+  }
+
   const handleLogout = () => {
-  localStorage.removeItem("token");
-  localStorage.removeItem("user");
-  window.location.reload();
-};
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    window.location.reload();
+  };
 
-const token = localStorage.getItem("token");
-const user = JSON.parse(localStorage.getItem("user"));
+  // ── Real user data ──────────────────────────────────────────────
+  const [users, setUsers] = useState([]);
+  const [usersLoading, setUsersLoading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
-if (!token || user?.role !== "admin") {
-  return null;
-}
+  const fetchUsers = useCallback(async () => {
+    try {
+      setUsersLoading(true);
+      const res = await API.get("/auth/users");
+      setUsers(res.data.users || []);
+    } catch (err) {
+      console.error("Failed to load users:", err);
+    } finally {
+      setUsersLoading(false);
+    }
+  }, []);
+
+  const [tests, setTests] = useState([]);
+  const [testsLoading, setTestsLoading] = useState(false);
+
+  const fetchTests = useCallback(async () => {
+    try {
+      setTestsLoading(true);
+      const data = await getAssessments();
+      setTests(data.assessments || []);
+    } catch (err) {
+      console.error("Failed to load assessments:", err);
+    } finally {
+      setTestsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchUsers();
+    fetchTests();
+  }, [fetchUsers, fetchTests]);
+
+  const filteredUsers = useMemo(() => {
+    if (!searchQuery.trim()) return users;
+    const q = searchQuery.toLowerCase();
+    return users.filter(
+      (u) =>
+        u.fullName?.toLowerCase().includes(q) ||
+        u.email?.toLowerCase().includes(q) ||
+        u.role?.toLowerCase().includes(q)
+    );
+  }, [users, searchQuery]);
+
+  const realStats = useMemo(() => [
+    {
+      id: 1, title: "Total Users", value: users.length,
+      description: "All registered users", icon: Users,
+    },
+    {
+      id: 2, title: "Students", value: users.filter((u) => u.role === "student").length,
+      description: "Active student accounts", icon: Users2,
+    },
+    {
+      id: 3, title: "Teachers", value: users.filter((u) => u.role === "teacher").length,
+      description: "Instructor accounts", icon: ShieldCheck,
+    },
+    {
+      id: 4, title: "Admins", value: users.filter((u) => u.role === "admin").length,
+      description: "Platform administrators", icon: ShieldAlert,
+    },
+  ], [users]);
 
   const content = useMemo(() => {
     switch (activeSection) {
@@ -59,8 +136,8 @@ if (!token || user?.role !== "admin") {
                   <tr>
                     <th className="px-4 py-3">Name</th>
                     <th className="px-4 py-3">Role</th>
-                    <th className="px-4 py-3">Institute</th>
-                    <th className="px-4 py-3">Status</th>
+                    <th className="px-4 py-3">Email</th>
+                    <th className="px-4 py-3">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -70,9 +147,14 @@ if (!token || user?.role !== "admin") {
                       <td className="px-4 py-3">{request.role}</td>
                       <td className="px-4 py-3">{request.institute}</td>
                       <td className="px-4 py-3">
-                        <span className="rounded-full bg-amber-500/10 px-2.5 py-1 text-xs text-amber-300">
-                          {request.status}
-                        </span>
+                        <div className="flex gap-2">
+                          <button className="flex items-center gap-1 rounded-lg bg-emerald-500/10 px-2.5 py-1 text-xs text-emerald-300 hover:bg-emerald-500/20 transition">
+                            <UserCheck className="h-3 w-3" /> Approve
+                          </button>
+                          <button className="flex items-center gap-1 rounded-lg bg-rose-500/10 px-2.5 py-1 text-xs text-rose-300 hover:bg-rose-500/20 transition">
+                            <UserX className="h-3 w-3" /> Reject
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -81,92 +163,147 @@ if (!token || user?.role !== "admin") {
             </div>
           </section>
         );
+
       case "management":
         return (
           <section className="space-y-4">
             <div className="rounded-3xl border border-white/10 bg-zinc-950/80 p-5">
-              <h2 className="text-lg font-semibold text-white">User management</h2>
-              <p className="mt-1 text-sm text-zinc-400">Admins can review active and suspended accounts.</p>
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-lg font-semibold text-white">User management</h2>
+                  <p className="mt-1 text-sm text-zinc-400">
+                    {users.length} registered users across all roles.
+                  </p>
+                </div>
+                <button
+                  onClick={fetchUsers}
+                  className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs text-zinc-300 transition hover:border-zinc-500 hover:text-white"
+                >
+                  <RefreshCw className="h-3.5 w-3.5" /> Refresh
+                </button>
+              </div>
             </div>
-            <div className="overflow-hidden rounded-3xl border border-white/10 bg-zinc-950/80">
-              <table className="min-w-full text-left text-sm text-zinc-300">
-                <thead className="bg-white/5 text-zinc-400">
-                  <tr>
-                    <th className="px-4 py-3">Name</th>
-                    <th className="px-4 py-3">Role</th>
-                    <th className="px-4 py-3">Institute</th>
-                    <th className="px-4 py-3">Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {userManagementUsers.map((user) => (
-                    <tr key={user.id} className="border-t border-white/10">
-                      <td className="px-4 py-3">{user.name}</td>
-                      <td className="px-4 py-3">{user.role}</td>
-                      <td className="px-4 py-3">{user.institute}</td>
-                      <td className="px-4 py-3">
-                        <span className={`rounded-full px-2.5 py-1 text-xs ${user.status === "Active" ? "bg-emerald-500/10 text-emerald-300" : "bg-rose-500/10 text-rose-300"}`}>
-                          {user.status}
-                        </span>
-                      </td>
+
+            {usersLoading ? (
+              <div className="flex items-center justify-center py-20">
+                <Loader2 className="h-8 w-8 animate-spin text-cyan-400" />
+              </div>
+            ) : (
+              <div className="overflow-hidden rounded-3xl border border-white/10 bg-zinc-950/80">
+                <table className="min-w-full text-left text-sm text-zinc-300">
+                  <thead className="bg-white/5 text-zinc-400">
+                    <tr>
+                      <th className="px-4 py-3">Name</th>
+                      <th className="px-4 py-3">Email</th>
+                      <th className="px-4 py-3">Role</th>
+                      <th className="px-4 py-3">Verified</th>
+                      <th className="px-4 py-3">Joined</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {filteredUsers.map((u) => (
+                      <tr key={u._id} className="border-t border-white/10">
+                        <td className="px-4 py-3 font-medium text-white">{u.fullName}</td>
+                        <td className="px-4 py-3 text-zinc-400">{u.email}</td>
+                        <td className="px-4 py-3">
+                          <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${ROLE_STYLES[u.role] || "bg-zinc-500/10 text-zinc-300"}`}>
+                            {u.role}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          {u.isVerified ? (
+                            <span className="flex items-center gap-1 text-xs text-emerald-400">
+                              <CheckCircle2 className="h-3.5 w-3.5" /> Verified
+                            </span>
+                          ) : (
+                            <span className="text-xs text-zinc-500">Pending</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-xs text-zinc-500">
+                          {new Date(u.createdAt).toLocaleDateString()}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {filteredUsers.length === 0 && (
+                  <div className="py-12 text-center text-sm text-zinc-500">
+                    No users found.
+                  </div>
+                )}
+              </div>
+            )}
           </section>
         );
+
       case "tests":
         return (
           <section className="space-y-4">
             <div className="rounded-3xl border border-white/10 bg-zinc-950/80 p-5">
               <h2 className="text-lg font-semibold text-white">Test management</h2>
-              <p className="mt-1 text-sm text-zinc-400">Create and publish assessments from one place.</p>
+              <p className="mt-1 text-sm text-zinc-400">View and manage all platform assessments.</p>
             </div>
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {testData.map((test) => (
-                <div key={test.id} className="rounded-3xl border border-white/10 bg-zinc-950/80 p-4">
-                  <p className="font-semibold text-white">{test.name}</p>
-                  <p className="mt-2 text-sm text-zinc-400">Teacher: {test.teacher}</p>
-                  <p className="text-sm text-zinc-400">Batch: {test.batch}</p>
-                  <p className="mt-3 inline-flex rounded-full bg-cyan-500/10 px-2.5 py-1 text-xs text-cyan-300">
-                    {test.status}
-                  </p>
-                </div>
-              ))}
-            </div>
+            
+            {testsLoading ? (
+              <div className="flex justify-center py-10">
+                <Loader2 className="h-6 w-6 animate-spin text-cyan-400" />
+              </div>
+            ) : tests.length === 0 ? (
+              <p className="text-center text-sm text-zinc-500 py-6">No assessments found.</p>
+            ) : (
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                {tests.map((test) => (
+                  <div key={test._id} className="rounded-3xl border border-white/10 bg-zinc-950/80 p-4">
+                    <p className="font-semibold text-white">{test.title}</p>
+                    <p className="mt-2 text-sm text-zinc-400">
+                      Teacher: {test.teacher?.fullName || "Unknown"}
+                    </p>
+                    <p className="text-sm text-zinc-400">Marks: {test.totalMarks}</p>
+                    <p className="text-sm text-zinc-400">Duration: {test.duration} min</p>
+                    <p className="mt-3 inline-flex rounded-full bg-cyan-500/10 px-2.5 py-1 text-xs text-cyan-300">
+                      {test.status}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
           </section>
         );
+
       case "settings":
         return (
           <section className="rounded-3xl border border-white/10 bg-zinc-950/80 p-5">
             <h2 className="text-lg font-semibold text-white">Profile settings</h2>
-            <p className="mt-1 text-sm text-zinc-400">Frontend-only profile editing controls.</p>
+            <p className="mt-1 text-sm text-zinc-400">Admin profile editing controls.</p>
             <div className="mt-5 grid gap-4 md:grid-cols-2">
               <label className="rounded-2xl border border-white/10 bg-white/5 p-3 text-sm text-zinc-300">
                 <span className="mb-2 block text-zinc-400">Full Name</span>
-                <input className="w-full bg-transparent outline-none" defaultValue={profileSettings.fullName} />
+                <input className="w-full bg-transparent outline-none" defaultValue={user?.fullName || profileSettings.fullName} />
               </label>
               <label className="rounded-2xl border border-white/10 bg-white/5 p-3 text-sm text-zinc-300">
                 <span className="mb-2 block text-zinc-400">Email</span>
-                <input className="w-full bg-transparent outline-none" defaultValue={profileSettings.email} />
+                <input className="w-full bg-transparent outline-none" defaultValue={user?.email || profileSettings.email} />
               </label>
             </div>
           </section>
         );
+
       case "dashboard":
       default:
         return (
           <section className="space-y-6">
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {dashboardStats.map((stat) => {
+            {/* Stats from real data */}
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+              {realStats.map((stat) => {
                 const Icon = stat.icon;
                 return (
                   <div key={stat.id} className="rounded-3xl border border-white/10 bg-zinc-950/80 p-4">
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm text-zinc-400">{stat.title}</p>
-                        <p className="mt-2 text-2xl font-semibold text-white">{stat.value}</p>
+                        <p className="mt-2 text-2xl font-semibold text-white">
+                          {usersLoading ? <Loader2 className="h-6 w-6 animate-spin text-zinc-500" /> : stat.value}
+                        </p>
                       </div>
                       <div className="rounded-2xl border border-white/10 bg-white/5 p-2 text-cyan-300">
                         <Icon size={18} />
@@ -179,37 +316,50 @@ if (!token || user?.role !== "admin") {
             </div>
 
             <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
+              {/* Recent users */}
               <div className="rounded-3xl border border-white/10 bg-zinc-950/80 p-5">
-                <h2 className="text-lg font-semibold text-white">Recent approvals</h2>
+                <h2 className="text-lg font-semibold text-white">Recent registrations</h2>
                 <div className="mt-4 space-y-3">
-                  {approvalRequests.slice(0, 3).map((request) => (
-                    <div key={request.id} className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-3 py-2">
+                  {usersLoading ? (
+                    <div className="flex items-center justify-center py-8">
+                      <Loader2 className="h-6 w-6 animate-spin text-zinc-500" />
+                    </div>
+                  ) : users.slice(0, 5).map((u) => (
+                    <div key={u._id} className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-3 py-2">
                       <div>
-                        <p className="font-medium text-white">{request.name}</p>
-                        <p className="text-sm text-zinc-400">{request.role} • {request.institute}</p>
+                        <p className="font-medium text-white">{u.fullName}</p>
+                        <p className="text-sm text-zinc-400">{u.email}</p>
                       </div>
-                      <span className="rounded-full bg-amber-500/10 px-2.5 py-1 text-xs text-amber-300">
-                        {request.status}
+                      <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${ROLE_STYLES[u.role] || "bg-zinc-500/10 text-zinc-300"}`}>
+                        {u.role}
                       </span>
                     </div>
                   ))}
+                  {!usersLoading && users.length === 0 && (
+                    <p className="text-center text-sm text-zinc-500 py-6">No users yet.</p>
+                  )}
                 </div>
               </div>
 
+              {/* Platform health */}
               <div className="rounded-3xl border border-white/10 bg-zinc-950/80 p-5">
                 <h2 className="text-lg font-semibold text-white">Platform health</h2>
                 <div className="mt-4 space-y-3">
                   <div className="rounded-2xl border border-white/10 bg-white/5 p-3">
-                    <p className="text-sm text-zinc-400">Active institutes</p>
-                    <p className="mt-1 text-xl font-semibold text-white">42</p>
+                    <p className="text-sm text-zinc-400">Total Registered</p>
+                    <p className="mt-1 text-xl font-semibold text-white">{users.length}</p>
                   </div>
                   <div className="rounded-2xl border border-white/10 bg-white/5 p-3">
-                    <p className="text-sm text-zinc-400">Test completion</p>
-                    <p className="mt-1 text-xl font-semibold text-white">86%</p>
+                    <p className="text-sm text-zinc-400">Teachers</p>
+                    <p className="mt-1 text-xl font-semibold text-white">
+                      {users.filter((u) => u.role === "teacher").length}
+                    </p>
                   </div>
                   <div className="rounded-2xl border border-white/10 bg-white/5 p-3">
-                    <p className="text-sm text-zinc-400">Support SLA</p>
-                    <p className="mt-1 text-xl font-semibold text-white">14 min</p>
+                    <p className="text-sm text-zinc-400">Students</p>
+                    <p className="mt-1 text-xl font-semibold text-white">
+                      {users.filter((u) => u.role === "student").length}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -217,7 +367,8 @@ if (!token || user?.role !== "admin") {
           </section>
         );
     }
-  }, [activeSection]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeSection, filteredUsers, usersLoading, users, realStats, tests, testsLoading]);
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(34,211,238,0.18),_transparent_24%),radial-gradient(circle_at_bottom_right,_rgba(167,139,250,0.16),_transparent_22%),#020617] px-3 py-4 text-zinc-100 sm:px-4 lg:px-6 lg:py-6">
@@ -253,28 +404,35 @@ if (!token || user?.role !== "admin") {
 
         <main className="flex-1">
           <header className="mb-4 flex flex-col gap-3 rounded-[28px] border border-white/10 bg-zinc-950/80 p-4 shadow-2xl shadow-black/20 backdrop-blur-xl sm:flex-row sm:items-center sm:justify-between">
-  <div>
-    <p className="text-sm text-zinc-400">Platform operations and oversight</p>
-    <h1 className="text-xl font-semibold text-white">Admin dashboard</h1>
-  </div>
+            <div>
+              <p className="text-sm text-zinc-400">Platform operations and oversight</p>
+              <h1 className="text-xl font-semibold text-white">
+                Admin dashboard — {user?.fullName || "Admin"}
+              </h1>
+            </div>
 
-  <div className="flex items-center gap-3">
-    <label className="flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-zinc-400">
-      <Search size={16} />
-      <input
-        className="w-full bg-transparent outline-none placeholder:text-zinc-500 sm:w-48"
-        placeholder="Search"
-      />
-    </label>
+            <div className="flex items-center gap-3">
+              <label className="flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-zinc-400">
+                <Search size={16} />
+                <input
+                  className="w-full bg-transparent outline-none placeholder:text-zinc-500 sm:w-48"
+                  placeholder="Search users…"
+                  value={searchQuery}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    if (activeSection !== "management") setActiveSection("management");
+                  }}
+                />
+              </label>
 
-    <button
-      onClick={handleLogout}
-      className="rounded-xl bg-red-500 px-4 py-2 text-sm font-semibold text-white hover:bg-red-600"
-    >
-      Logout
-    </button>
-  </div>
-</header>
+              <button
+                onClick={handleLogout}
+                className="rounded-xl bg-red-500 px-4 py-2 text-sm font-semibold text-white hover:bg-red-600 transition"
+              >
+                Logout
+              </button>
+            </div>
+          </header>
 
           {content}
         </main>

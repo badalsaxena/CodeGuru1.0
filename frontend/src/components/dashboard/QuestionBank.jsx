@@ -1,4 +1,4 @@
-import { Edit3, Trash2, Plus, Filter } from "lucide-react";
+import { Edit3, Trash2, Plus, Filter, BookOpen } from "lucide-react";
 
 const QuestionBank = ({ questions, onDelete, onAddQuestion, searchTerm, onSearchChange, difficultyFilter, onDifficultyChange }) => {
   return (
@@ -35,8 +35,15 @@ const QuestionBank = ({ questions, onDelete, onAddQuestion, searchTerm, onSearch
       </div>
 
       <div className="mt-6 space-y-4">
+        {questions.length === 0 && (
+          <div className="flex flex-col items-center justify-center rounded-2xl border border-white/8 bg-zinc-900/40 py-16 text-center">
+            <BookOpen className="mb-3 h-10 w-10 text-zinc-600" />
+            <p className="font-semibold text-white">No questions found</p>
+            <p className="mt-1 text-xs text-zinc-500">Click "Add Coding Question" to create your first one.</p>
+          </div>
+        )}
         {questions.map((question) => (
-          <div key={question.id} className="rounded-2xl border border-white/10 bg-zinc-900/70 p-4">
+          <div key={question._id} className="rounded-2xl border border-white/10 bg-zinc-900/70 p-4">
             <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
               <div className="space-y-2">
                 <div className="flex flex-wrap items-center gap-2">
@@ -60,7 +67,7 @@ const QuestionBank = ({ questions, onDelete, onAddQuestion, searchTerm, onSearch
                 <button className="rounded-2xl border border-white/10 bg-white/5 p-2 text-zinc-300 transition hover:border-cyan-400/40 hover:text-white">
                   <Edit3 className="h-4 w-4" />
                 </button>
-                <button onClick={() => onDelete(question.id)} className="rounded-2xl border border-white/10 bg-white/5 p-2 text-zinc-300 transition hover:border-rose-400/40 hover:text-white">
+                <button onClick={() => onDelete(question._id)} className="rounded-2xl border border-white/10 bg-white/5 p-2 text-zinc-300 transition hover:border-rose-400/40 hover:text-white">
                   <Trash2 className="h-4 w-4" />
                 </button>
               </div>

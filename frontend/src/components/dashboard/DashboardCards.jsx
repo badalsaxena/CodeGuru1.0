@@ -14,7 +14,7 @@ const DashboardCards = ({ stats }) => {
   return (
     <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
       {stats.map((stat, index) => {
-        const Icon = iconMap[stat.icon];
+        const Icon = iconMap[stat.icon] || Code2;
 
         return (
           <motion.div

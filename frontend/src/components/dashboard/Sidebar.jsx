@@ -1,4 +1,4 @@
-import { LayoutGrid, BookOpenCheck, Code2, MonitorPlay, BarChart3, Settings, Sparkles, Trophy } from "lucide-react";
+import { LayoutGrid, BookOpenCheck, Code2, MonitorPlay, BarChart3, Settings, Sparkles, Trophy, ClipboardList } from "lucide-react";
 
 const iconMap = {
   LayoutGrid,
@@ -8,6 +8,7 @@ const iconMap = {
   BarChart3,
   Settings,
   Trophy,
+  ClipboardList,
 };
 
 const Sidebar = ({ activeSection, onSectionChange, navItems }) => {
