@@ -36,9 +36,15 @@ const StudentDashboardCards = ({ stats }) => {
               </div>
               <div className="mt-4 flex items-center justify-between text-sm">
                 <p className="text-zinc-400">{stat.description}</p>
-                <span className={`font-medium ${stat.change.startsWith("-") ? "text-rose-400" : "text-emerald-400"}`}>
-                  {stat.change}
-                </span>
+               <span
+  className={`font-medium ${
+    (stat.change || "").startsWith("-")
+      ? "text-rose-400"
+      : "text-emerald-400"
+  }`}
+>
+  {stat.change || "0%"}
+</span>
               </div>
             </div>
           </motion.div>

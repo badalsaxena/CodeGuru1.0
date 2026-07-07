@@ -12,6 +12,7 @@ import CodeEditorPage from "@/pages/CodeEditorPage";
 import { getStudentAssessments, startAssessment, getStudentAssessmentById } from "@/services/studentService";
 import { getQuestions } from "@/services/questionService";
 import {
+  studentStats,
   leaderboard,
   progressSeries,
   topicPerformance,
@@ -75,33 +76,24 @@ const StudentPage = () => {
     fetchQuestions();
   }, [fetchExams, fetchQuestions]);
 
-  // Dynamic stats
-  const studentStats = useMemo(() => [
-    {
-      id: 1,
-      label: "Available Exams",
-      value: exams.length,
-      color: "emerald",
-    },
-    {
-      id: 2,
-      label: "Practice Problems",
-      value: questions.length,
-      color: "cyan",
-    },
-    {
-      id: 3,
-      label: "Rank",
-      value: "#42",
-      color: "violet",
-    },
-    {
-      id: 4,
-      label: "Score Today",
-      value: "85%",
-      color: "amber",
-    },
-  ], [exams, questions]);
+const dashboardStats = studentStats.map((card) => {
+  switch (card.title) {
+    case "Total Exams Attempted":
+      return {
+        ...card,
+        value: exams.length,
+      };
+
+    case "Problems Solved":
+      return {
+        ...card,
+        value: questions.length,
+      };
+
+    default:
+      return card;
+  }
+});
 
   // If code editor is open, show it
   if (editorQuestion) {
@@ -181,7 +173,7 @@ const StudentPage = () => {
               </div>
             </div>
 
-            <StudentDashboardCards stats={studentStats} />
+          <StudentDashboardCards stats={dashboardStats} />
 
             <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
               {examsLoading ? (
