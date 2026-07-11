@@ -1,5 +1,5 @@
 const Assessment = require("../models/Assessment.model");
-
+const Question = require("../models/Question.model");
 // ====================== CREATE ASSESSMENT ======================
 
 const createAssessment = async (req, res) => {
@@ -128,7 +128,13 @@ const updateAssessment = async (req, res) => {
         message: "You are not authorized to update this assessment",
       });
     }
-
+// Published Assessment cannot be edited
+if (assessment.status === "published") {
+  return res.status(400).json({
+    success: false,
+    message: "Published assessment cannot be edited. Please unpublish it first.",
+  });
+}
     const updatedAssessment = await Assessment.findByIdAndUpdate(
       id,
       req.body,
@@ -223,16 +229,36 @@ const addQuestionsToAssessment = async (req, res) => {
         message: "You are not authorized",
       });
     }
+    // Published Assessment cannot be modified
+if (assessment.status === "published") {
+  return res.status(400).json({
+    success: false,
+    message: "Published assessment cannot be modified. Please unpublish it first.",
+  });
+}
+// Validate all selected questions
+for (const questionId of questionIds) {
+  const question = await Question.findById(questionId);
 
-    const existingQuestions = assessment.questions.map((q) => q.toString());
-
-    questionIds.forEach((questionId) => {
-      if (!existingQuestions.includes(questionId)) {
-        assessment.questions.push(questionId);
-      }
+  if (!question) {
+    return res.status(404).json({
+      success: false,
+      message: `Question not found: ${questionId}`,
     });
+  }
 
-    await assessment.save();
+  if (question.status !== "published") {
+    return res.status(400).json({
+      success: false,
+      message: `"${question.title}" is not published. Only published questions can be added.`,
+    });
+  }
+}
+
+// Sync questions exactly as selected in frontend
+assessment.questions = questionIds;
+
+await assessment.save();
 
     const updatedAssessment = await Assessment.findById(id)
       .populate("teacher", "fullName email")
@@ -256,6 +282,113 @@ const addQuestionsToAssessment = async (req, res) => {
     });
   }
 };
+// ====================== PUBLISH ASSESSMENT ======================
+
+const publishAssessment = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const assessment = await Assessment.findById(id);
+
+    if (!assessment) {
+      return res.status(404).json({
+        success: false,
+        message: "Assessment not found",
+      });
+    }
+
+    // Ownership Check
+    if (assessment.teacher.toString() !== req.user.id) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not authorized",
+      });
+    }
+
+    // At least one question
+    if (assessment.questions.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Add at least one question before publishing",
+      });
+    }
+
+    // Check all questions are published
+    const questions = await Question.find({
+      _id: { $in: assessment.questions },
+    });
+
+    const unpublished = questions.find(
+      (q) => q.status !== "published"
+    );
+
+    if (unpublished) {
+      return res.status(400).json({
+        success: false,
+        message: "All questions must be published before publishing the assessment",
+      });
+    }
+
+    assessment.status = "published";
+    await assessment.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Assessment Published Successfully",
+      assessment,
+    });
+
+  } catch (error) {
+    console.error("❌ Publish Assessment Error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+    });
+  }
+};
+// ====================== UNPUBLISH ASSESSMENT ======================
+
+const unpublishAssessment = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const assessment = await Assessment.findById(id);
+
+    if (!assessment) {
+      return res.status(404).json({
+        success: false,
+        message: "Assessment not found",
+      });
+    }
+
+    // Ownership Check
+    if (assessment.teacher.toString() !== req.user.id) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not authorized",
+      });
+    }
+
+    assessment.status = "draft";
+
+    await assessment.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Assessment Unpublished Successfully",
+      assessment,
+    });
+
+  } catch (error) {
+    console.error("❌ Unpublish Assessment Error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+    });
+  }
+};
 
 // ====================== EXPORTS ======================
 
@@ -266,4 +399,6 @@ module.exports = {
   updateAssessment,
   deleteAssessment,
   addQuestionsToAssessment,
+  publishAssessment,
+  unpublishAssessment,
 };

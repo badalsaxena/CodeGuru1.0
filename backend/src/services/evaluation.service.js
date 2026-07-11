@@ -68,6 +68,8 @@ const evaluateSubmission = async ({
         code,
         testCase.input
       );
+console.log("🔥 Piston Response:");
+console.log(JSON.stringify(execution, null, 2));
 
       const actualOutput = normalizeOutput(
         execution.run?.output ||

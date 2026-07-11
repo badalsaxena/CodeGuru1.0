@@ -5,20 +5,37 @@ const Question = require("../models/Question.model");
 const createQuestion = async (req, res) => {
   try {
     const {
-      title,
-      description,
-      difficulty = "Easy",
-      marks = 10,
-      tags = [],
-      constraints = "",
-      sampleTestCases = [],
-      hiddenTestCases = [],
-      boilerplate = {},
-      supportedLanguages = [],
-      timeLimit = 1,
-      memoryLimit = 256,
-      status = "draft",
-    } = req.body;
+  questionType = "coding",
+  subject = "",
+  topic = "",
+
+  title,
+  description,
+
+  difficulty = "Easy",
+  marks = 10,
+
+  tags = [],
+
+  constraints = "",
+
+  sampleTestCases = [],
+  hiddenTestCases = [],
+
+  boilerplate = {},
+
+  supportedLanguages = [],
+
+ options = [],
+answerKey = "",
+maxWords = 0,
+correctAnswer = "",
+
+timeLimit = 1,
+memoryLimit = 256,
+
+  status = "draft",
+} = req.body;
 
     // Basic Validation
     if (!title || !description) {
@@ -27,23 +44,89 @@ const createQuestion = async (req, res) => {
         message: "Title and Description are required",
       });
     }
+    // ✅ Question Type Validation
+const allowedTypes = [
+  "coding",
+  "mcq",
+  "subjective",
+  "true_false",
+];
 
-    // At least one public test case
-    if (sampleTestCases.length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: "At least one sample test case is required",
-      });
-    }
+if (!allowedTypes.includes(questionType)) {
+  return res.status(400).json({
+    success: false,
+    message: "Invalid question type",
+  });
+}
+   // ================= Coding =================
 
-    // At least one hidden test case
-    if (hiddenTestCases.length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: "At least one hidden test case is required",
-      });
-    }
+if (questionType === "coding") {
 
+  if (sampleTestCases.length === 0) {
+    return res.status(400).json({
+      success: false,
+      message: "At least one sample test case is required",
+    });
+  }
+
+  if (hiddenTestCases.length === 0) {
+    return res.status(400).json({
+      success: false,
+      message: "At least one hidden test case is required",
+    });
+  }
+
+}
+
+// ================= MCQ =================
+
+if (questionType === "mcq") {
+
+  if (options.length < 4) {
+    return res.status(400).json({
+      success: false,
+      message: "Minimum 4 options are required",
+    });
+  }
+
+  const correctOptions = options.filter(
+    (option) => option.isCorrect
+  );
+
+  if (correctOptions.length !== 1) {
+    return res.status(400).json({
+      success: false,
+      message: "Exactly one correct option is required",
+    });
+  }
+
+}
+
+// ================= Subjective =================
+
+if (questionType === "subjective") {
+
+  if (!answerKey) {
+    return res.status(400).json({
+      success: false,
+      message: "Answer Key is required",
+    });
+  }
+
+}
+
+// ================= True False =================
+
+if (questionType === "true_false") {
+
+  if (!correctAnswer) {
+    return res.status(400).json({
+      success: false,
+      message: "Correct Answer is required",
+    });
+  }
+
+}
     const question = await Question.create({
       title,
       description,
@@ -55,9 +138,16 @@ const createQuestion = async (req, res) => {
       hiddenTestCases,
       boilerplate,
       supportedLanguages,
+      options,
+      answerKey,
+      maxWords,
+      correctAnswer,
       timeLimit,
       memoryLimit,
       status,
+      questionType,
+      subject,
+      topic,
       createdBy: req.user.id,
     });
 
@@ -80,9 +170,39 @@ const createQuestion = async (req, res) => {
 
 const getAllQuestions = async (req, res) => {
   try {
-    const questions = await Question.find({
-      createdBy: req.user.id,
-    }).sort({ createdAt: -1 });
+    const {
+  questionType,
+  subject,
+  difficulty,
+  status,
+} = req.query;
+    const query = {
+  createdBy: req.user.id,
+};
+
+// Filter by Question Type
+if (questionType) {
+  query.questionType = questionType;
+}
+
+// Filter by Subject
+if (subject) {
+  query.subject = subject;
+}
+
+// Filter by Difficulty
+if (difficulty) {
+  query.difficulty = difficulty;
+}
+
+// Filter by Status
+if (status) {
+  query.status = status;
+}
+
+const questions = await Question.find(query).sort({
+  createdAt: -1,
+});
 
     return res.status(200).json({
       success: true,

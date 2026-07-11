@@ -4,6 +4,7 @@ const {
   getPublishedAssessments,
   getStudentAssessmentById,
   startAssessment,
+  submitAssessment,
 } = require("../controllers/student.controller");
 
 const verifyToken = require("../middleware/auth.middleware");
@@ -20,5 +21,8 @@ router.get("/assessments/:id", verifyToken, getStudentAssessmentById);
 
 // Start assessment
 router.post("/assessments/:id/start", verifyToken, startAssessment);
+
+// Submit assessment
+router.post("/assessments/:id/submit", verifyToken, submitAssessment);
 
 module.exports = router;

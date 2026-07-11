@@ -111,6 +111,57 @@ const questionSchema = new mongoose.Schema(
       enum: ["draft", "published"],
       default: "draft",
     },
+    // ================= Question Bank =================
+
+questionType: {
+  type: String,
+  enum: ["coding", "mcq", "subjective", "true_false"],
+  default: "coding",
+},
+
+subject: {
+  type: String,
+  default: "",
+  trim: true,
+},
+
+topic: {
+  type: String,
+  default: "",
+  trim: true,
+},
+
+// MCQ Options
+options: [
+  {
+    text: {
+      type: String,
+      trim: true,
+    },
+    isCorrect: {
+      type: Boolean,
+      default: false,
+    },
+  },
+],
+
+// Subjective
+answerKey: {
+  type: String,
+  default: "",
+},
+
+maxWords: {
+  type: Number,
+  default: 0,
+},
+
+// True / False
+correctAnswer: {
+  type: String,
+  enum: ["true", "false", ""],
+  default: "",
+},
 
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,

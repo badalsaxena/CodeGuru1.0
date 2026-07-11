@@ -1,5 +1,7 @@
 const Submission = require("../models/Submission.model");
 const Attempt = require("../models/Attempt.model");
+const Assessment = require("../models/Assessment.model");
+const Question = require("../models/Question.model");
 const { evaluateSubmission } = require("../services/evaluation.service");
 
 // ====================== CREATE SUBMISSION ======================
@@ -14,6 +16,45 @@ const createSubmission = async (req, res) => {
         message: "All fields are required",
       });
     }
+    // ====================== VALIDATE ASSESSMENT ======================
+
+const assessmentData = await Assessment.findById(assessment);
+
+if (!assessmentData) {
+  return res.status(404).json({
+    success: false,
+    message: "Assessment not found",
+  });
+}
+
+if (assessmentData.status !== "published") {
+  return res.status(400).json({
+    success: false,
+    message: "Assessment is not published",
+  });
+}
+
+// ====================== VALIDATE QUESTION ======================
+
+const questionData = await Question.findById(question);
+
+if (!questionData) {
+  return res.status(404).json({
+    success: false,
+    message: "Question not found",
+  });
+}
+
+const isQuestionExists = assessmentData.questions.some(
+  (q) => q.toString() === question
+);
+
+if (!isQuestionExists) {
+  return res.status(400).json({
+    success: false,
+    message: "Question does not belong to this assessment",
+  });
+}
 
     // Evaluate against hidden test cases
     const evaluation = await evaluateSubmission({
