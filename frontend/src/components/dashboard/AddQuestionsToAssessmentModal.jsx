@@ -108,8 +108,9 @@ export default function AddQuestionsToAssessmentModal({ assessment, onClose, onS
             ) : (
               filteredQuestions.map((q) => (
                 <label
-                  key={q._id}
-                  className={`flex cursor-pointer items-center gap-4 rounded-2xl border p-4 transition ${
+  key={q._id}
+  onClick={() => toggleQuestion(q._id)}
+  className={`flex cursor-pointer items-center gap-4 rounded-2xl border p-4 transition ${
                     selectedIds.includes(q._id)
                       ? "border-emerald-500/50 bg-emerald-500/5"
                       : "border-white/10 bg-white/5 hover:border-white/20"

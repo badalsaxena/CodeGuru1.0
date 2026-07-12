@@ -1,16 +1,28 @@
 import { useState } from "react";
 import { X, Loader2, AlertCircle, CheckCircle2, Calendar, Clock } from "lucide-react";
-import { createAssessment } from "@/services/assessmentService";
+import {
+  createAssessment,
+  updateAssessment,
+} from "@/services/assessmentService";
 
-export default function AddAssessmentModal({ onClose, onSuccess }) {
-  const [form, setForm] = useState({
-    title: "",
-    description: "",
-    duration: 60,
-    totalMarks: 100,
-    startTime: "",
-    endTime: "",
-  });
+export default function AddAssessmentModal({
+  onClose,
+  onSuccess,
+  assessment = null,
+  isEdit = false,
+}) {
+ const [form, setForm] = useState({
+  title: assessment?.title || "",
+  description: assessment?.description || "",
+  duration: assessment?.duration || 60,
+  totalMarks: assessment?.totalMarks || 100,
+  startTime: assessment?.startTime
+    ? assessment.startTime.slice(0, 16)
+    : "",
+  endTime: assessment?.endTime
+    ? assessment.endTime.slice(0, 16)
+    : "",
+});
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -42,8 +54,14 @@ export default function AddAssessmentModal({ onClose, onSuccess }) {
         startTime: form.startTime || undefined,
         endTime: form.endTime || undefined,
       };
-      const data = await createAssessment(payload);
-      setSuccess("Assessment created successfully!");
+      const data = isEdit
+  ? await updateAssessment(assessment._id, payload)
+  : await createAssessment(payload);
+      setSuccess(
+  isEdit
+    ? "Assessment updated successfully!"
+    : "Assessment created successfully!"
+);
       setTimeout(() => {
         onSuccess && onSuccess(data.assessment);
         onClose();
@@ -61,7 +79,9 @@ export default function AddAssessmentModal({ onClose, onSuccess }) {
         {/* Header */}
         <div className="flex items-center justify-between border-b border-white/10 px-6 py-4">
           <div>
-            <h2 className="text-lg font-bold text-white">Create Assessment</h2>
+          <h2 className="text-lg font-bold text-white">
+  {isEdit ? "Edit Assessment" : "Create Assessment"}
+</h2>
             <p className="text-xs text-zinc-400">Schedule a new coding exam</p>
           </div>
           <button
@@ -183,10 +203,13 @@ export default function AddAssessmentModal({ onClose, onSuccess }) {
               className="flex items-center gap-2 rounded-xl bg-emerald-500 px-6 py-2.5 text-sm font-bold text-black transition hover:bg-emerald-400 disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {loading ? (
-                <><Loader2 className="h-4 w-4 animate-spin" /> Creating…</>
-              ) : (
-                "Create Assessment"
-              )}
+  <>
+    <Loader2 className="h-4 w-4 animate-spin" />
+    {isEdit ? " Updating..." : " Creating..."}
+  </>
+) : (
+  isEdit ? "Update Assessment" : "Create Assessment"
+)}
             </button>
           </div>
         </form>

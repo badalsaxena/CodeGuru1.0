@@ -11,7 +11,13 @@ import AddQuestionModal from "@/components/dashboard/AddQuestionModal";
 import AddAssessmentModal from "@/components/dashboard/AddAssessmentModal";
 import AddQuestionsToAssessmentModal from "@/components/dashboard/AddQuestionsToAssessmentModal";
 import { getQuestions, deleteQuestion } from "@/services/questionService";
-import { getAssessments } from "@/services/assessmentService";
+
+import {
+  getAssessments,
+  publishAssessment,
+  unpublishAssessment,
+  deleteAssessment,
+} from "@/services/assessmentService";
 import {
   monitoringStudents,
   aiAlerts,
@@ -82,6 +88,7 @@ const TeacherPage = () => {
 
   // Modals
   const [showAddQuestion, setShowAddQuestion] = useState(false);
+  const [editingAssessment, setEditingAssessment] = useState(null);
   const [showAddAssessment, setShowAddAssessment] = useState(false);
   const [manageQuestionsAssessment, setManageQuestionsAssessment] = useState(null);
 
@@ -137,6 +144,50 @@ const TeacherPage = () => {
       alert("Failed to delete question: " + (err.message || "Unknown error"));
     }
   };
+
+  
+const handlePublishAssessment = async (id) => {
+  try {
+    await publishAssessment(id);
+
+    await fetchAssessments();
+
+    alert("Assessment published successfully!");
+  } catch (err) {
+    alert(err.response?.data?.message || "Failed to publish assessment.");
+  }
+};
+
+const handleUnpublishAssessment = async (id) => {
+  try {
+    await unpublishAssessment(id);
+
+    await fetchAssessments();
+
+    alert("Assessment moved to draft.");
+  } catch (err) {
+    alert(err.response?.data?.message || "Failed to unpublish assessment.");
+  }
+};
+
+const handleDeleteAssessment = async (id) => {
+  const confirmDelete = window.confirm(
+    "Are you sure you want to delete this assessment?"
+  );
+
+  if (!confirmDelete) return;
+
+  try {
+    await deleteAssessment(id);
+
+    await fetchAssessments();
+
+    alert("Assessment deleted successfully!");
+  } catch (err) {
+    alert(err.response?.data?.message || "Failed to delete assessment.");
+  }
+};
+
 
   // ── Filtered Questions ───────────────────────────────────────────
   const filteredQuestions = useMemo(() => {
@@ -225,9 +276,15 @@ const TeacherPage = () => {
                           <p className="mt-1 text-xs text-zinc-400 line-clamp-2">{assessment.description}</p>
                         )}
                       </div>
-                      <span className="ml-2 rounded-full bg-cyan-500/10 px-2.5 py-1 text-[10px] font-semibold text-cyan-300">
-                        {assessment.questions?.length || 0} Qs
-                      </span>
+                      <span
+  className={`rounded-full px-2.5 py-1 text-[10px] font-semibold ${
+    assessment.status === "published"
+      ? "bg-emerald-500/20 text-emerald-300"
+      : "bg-amber-500/20 text-amber-300"
+  }`}
+>
+  {assessment.status}
+</span>
                     </div>
 
                     <div className="space-y-1.5 text-xs text-zinc-400">
@@ -246,13 +303,74 @@ const TeacherPage = () => {
                         </div>
                       )}
                     </div>
+                    <div className="mt-4 grid grid-cols-2 gap-2">
+<button
+  disabled={assessment.status === "published"}
+  onClick={() => {
+    if (assessment.status === "draft") {
+      setEditingAssessment(assessment);
+      setShowAddAssessment(true);
+    }
+  }}
+  className={`rounded-xl border py-2 text-xs font-semibold transition ${
+    assessment.status === "published"
+      ? "cursor-not-allowed border-zinc-700 bg-zinc-800 text-zinc-500"
+      : "border-white/10 bg-white/5 text-zinc-300 hover:bg-white/10"
+  }`}
+>
+  ✏ Edit
+</button>
+
+<button
+  disabled={assessment.status === "published"}
+  onClick={() => {
+    if (assessment.status === "draft") {
+      setManageQuestionsAssessment(assessment);
+    }
+  }}
+  className={`rounded-xl py-2 text-xs font-semibold transition ${
+    assessment.status === "published"
+      ? "cursor-not-allowed border border-zinc-700 bg-zinc-800 text-zinc-500"
+      : "border border-white/10 bg-white/5 text-zinc-300 hover:bg-white/10"
+  }`}
+>
+  📚 Manage Questions
+</button>
+
+  {assessment.status === "draft" ? (
+    <button
+  disabled={(assessment.questions?.length || 0) === 0}
+ onClick={() => handlePublishAssessment(assessment._id)}
+  className="rounded-xl bg-emerald-500 py-2 text-xs font-semibold text-black hover:bg-emerald-400 disabled:cursor-not-allowed disabled:bg-zinc-700 disabled:text-zinc-400"
+>
+  🚀 Publish
+</button>
+  ) : (
+    <button
+      onClick={() => handleUnpublishAssessment(assessment._id)}
+      className="rounded-xl bg-amber-500 py-2 text-xs font-semibold text-black"
+    >
+      📥 Unpublish
+    </button>
+  )}
+
+<button
+  disabled={assessment.status === "published"}
+  onClick={() => {
+    if (assessment.status === "draft") {
+      handleDeleteAssessment(assessment._id);
+    }
+  }}
+  className={`rounded-xl py-2 text-xs font-semibold transition ${
+    assessment.status === "published"
+      ? "cursor-not-allowed bg-zinc-800 text-zinc-500"
+      : "bg-red-500 text-white hover:bg-red-600"
+  }`}
+>
+  🗑 Delete
+</button>
+</div>
                     
-                    <button
-                      onClick={() => setManageQuestionsAssessment(assessment)}
-                      className="mt-4 w-full rounded-xl border border-white/10 bg-white/5 py-2 text-xs font-semibold text-zinc-300 transition hover:bg-white/10 hover:text-white"
-                    >
-                      Manage Questions
-                    </button>
                   </div>
                 ))}
               </div>
@@ -372,14 +490,27 @@ const TeacherPage = () => {
         />
       )}
       {showAddAssessment && (
-        <AddAssessmentModal
-          onClose={() => setShowAddAssessment(false)}
-          onSuccess={(newA) => {
-            setAssessments((prev) => [newA, ...prev]);
-            setShowAddAssessment(false);
-          }}
-        />
-      )}
+  <AddAssessmentModal
+    assessment={editingAssessment}
+    isEdit={!!editingAssessment}
+    onClose={() => {
+      setShowAddAssessment(false);
+      setEditingAssessment(null);
+    }}
+    onSuccess={(assessment) => {
+      if (editingAssessment) {
+        setAssessments((prev) =>
+          prev.map((a) => (a._id === assessment._id ? assessment : a))
+        );
+      } else {
+        setAssessments((prev) => [assessment, ...prev]);
+      }
+
+      setShowAddAssessment(false);
+      setEditingAssessment(null);
+    }}
+  />
+)}
       {manageQuestionsAssessment && (
         <AddQuestionsToAssessmentModal
           assessment={manageQuestionsAssessment}

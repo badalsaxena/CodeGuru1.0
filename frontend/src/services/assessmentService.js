@@ -35,3 +35,15 @@ export const addQuestionsToAssessment = async (id, questionIds) => {
   const res = await API.post(`/assessments/${id}/questions`, { questionIds });
   return res.data;
 };
+
+// ======================= PUBLISH ASSESSMENT =======================
+export const publishAssessment = async (id) => {
+  const res = await API.patch(`/assessments/${id}/publish`);
+  return res.data;
+};
+
+// ======================= UNPUBLISH ASSESSMENT =======================
+export const unpublishAssessment = async (id) => {
+  const res = await API.patch(`/assessments/${id}/unpublish`);
+  return res.data;
+};
