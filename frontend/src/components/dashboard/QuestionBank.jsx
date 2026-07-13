@@ -1,6 +1,16 @@
 import { Edit3, Trash2, Plus, Filter, BookOpen } from "lucide-react";
 
-const QuestionBank = ({ questions, onDelete, onAddQuestion, searchTerm, onSearchChange, difficultyFilter, onDifficultyChange }) => {
+const QuestionBank = ({
+  questions,
+  onDelete,
+  onEdit,
+  onPublish,
+  onAddQuestion,
+  searchTerm,
+  onSearchChange,
+  difficultyFilter,
+  onDifficultyChange,
+}) => {
   return (
     <div className="rounded-3xl border border-white/10 bg-zinc-950/70 p-5 shadow-2xl shadow-black/20 backdrop-blur-xl">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
@@ -64,9 +74,12 @@ const QuestionBank = ({ questions, onDelete, onAddQuestion, searchTerm, onSearch
               </div>
 
               <div className="flex gap-2">
-                <button className="rounded-2xl border border-white/10 bg-white/5 p-2 text-zinc-300 transition hover:border-cyan-400/40 hover:text-white">
-                  <Edit3 className="h-4 w-4" />
-                </button>
+                <button
+  onClick={() => onEdit(question)}
+  className="rounded-2xl border border-white/10 bg-white/5 p-2 text-zinc-300 transition hover:border-cyan-400/40 hover:text-white"
+>
+  <Edit3 className="h-4 w-4" />
+</button>
                 <button onClick={() => onDelete(question._id)} className="rounded-2xl border border-white/10 bg-white/5 p-2 text-zinc-300 transition hover:border-rose-400/40 hover:text-white">
                   <Trash2 className="h-4 w-4" />
                 </button>
@@ -92,14 +105,21 @@ const QuestionBank = ({ questions, onDelete, onAddQuestion, searchTerm, onSearch
               </div>
             </div>
 
-            <div className="mt-4 flex flex-wrap gap-3">
-              <button className="rounded-2xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-zinc-300 transition hover:border-emerald-400/40 hover:text-white">
-                Save Draft
-              </button>
-              <button className="rounded-2xl bg-emerald-500 px-3 py-2 text-sm font-medium text-black transition hover:bg-emerald-400">
-                Publish Question
-              </button>
-            </div>
+<div className="mt-4">
+  <button
+    onClick={() => onPublish(question._id)}
+    disabled={question.status === "published"}
+    className={`rounded-2xl px-4 py-2 text-sm font-medium transition ${
+      question.status === "published"
+        ? "bg-zinc-700 text-zinc-400 cursor-not-allowed"
+        : "bg-emerald-500 text-black hover:bg-emerald-400"
+    }`}
+  >
+    {question.status === "published"
+      ? "Published"
+      : "Publish Question"}
+  </button>
+</div>
           </div>
         ))}
       </div>

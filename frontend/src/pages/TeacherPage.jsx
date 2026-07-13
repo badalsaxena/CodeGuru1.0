@@ -10,7 +10,11 @@ import SettingsPanel from "@/components/dashboard/SettingsPanel";
 import AddQuestionModal from "@/components/dashboard/AddQuestionModal";
 import AddAssessmentModal from "@/components/dashboard/AddAssessmentModal";
 import AddQuestionsToAssessmentModal from "@/components/dashboard/AddQuestionsToAssessmentModal";
-import { getQuestions, deleteQuestion } from "@/services/questionService";
+import {
+  getQuestions,
+  deleteQuestion,
+  publishQuestion,
+} from "@/services/questionService";
 
 import {
   getAssessments,
@@ -88,6 +92,7 @@ const TeacherPage = () => {
 
   // Modals
   const [showAddQuestion, setShowAddQuestion] = useState(false);
+  const [editingQuestion, setEditingQuestion] = useState(null);
   const [editingAssessment, setEditingAssessment] = useState(null);
   const [showAddAssessment, setShowAddAssessment] = useState(false);
   const [manageQuestionsAssessment, setManageQuestionsAssessment] = useState(null);
@@ -145,6 +150,28 @@ const TeacherPage = () => {
     }
   };
 
+  const handleEditQuestion = (question) => {
+  setEditingQuestion(question);
+  setShowAddQuestion(true);
+};
+
+ const handlePublishQuestion = async (id) => {
+  try {
+    await publishQuestion(id);
+
+    setQuestions((prev) =>
+      prev.map((q) =>
+        q._id === id
+          ? { ...q, status: "published" }
+          : q
+      )
+    );
+
+    alert("Question published successfully!");
+  } catch (err) {
+    alert(err.response?.data?.message || "Failed to publish question.");
+  }
+};
   
 const handlePublishAssessment = async (id) => {
   try {
@@ -217,15 +244,18 @@ const handleDeleteAssessment = async (id) => {
                 <Loader2 className="h-8 w-8 animate-spin text-emerald-400" />
               </div>
             ) : (
-              <QuestionBank
-                questions={filteredQuestions}
-                onDelete={handleDeleteQuestion}
-                onAddQuestion={() => setShowAddQuestion(true)}
-                searchTerm={searchTerm}
-                onSearchChange={setSearchTerm}
-                difficultyFilter={difficultyFilter}
-                onDifficultyChange={setDifficultyFilter}
-              />
+             <QuestionBank
+  questions={filteredQuestions}
+  onDelete={handleDeleteQuestion}
+  onEdit={handleEditQuestion}
+  onPublish={handlePublishQuestion}
+  onAddQuestion={() => setShowAddQuestion(true)}
+  searchTerm={searchTerm}
+  onSearchChange={setSearchTerm}
+  difficultyFilter={difficultyFilter}
+  onDifficultyChange={setDifficultyFilter}
+  
+/>
             )}
           </div>
         );
@@ -432,15 +462,17 @@ const handleDeleteAssessment = async (id) => {
                   <Loader2 className="h-8 w-8 animate-spin text-emerald-400" />
                 </div>
               ) : (
-                <QuestionBank
-                  questions={filteredQuestions}
-                  onDelete={handleDeleteQuestion}
-                  onAddQuestion={() => setShowAddQuestion(true)}
-                  searchTerm={searchTerm}
-                  onSearchChange={setSearchTerm}
-                  difficultyFilter={difficultyFilter}
-                  onDifficultyChange={setDifficultyFilter}
-                />
+               <QuestionBank
+  questions={filteredQuestions}
+  onDelete={handleDeleteQuestion}
+  onEdit={handleEditQuestion}
+  onPublish={handlePublishQuestion}
+  onAddQuestion={() => setShowAddQuestion(true)}
+  searchTerm={searchTerm}
+  onSearchChange={setSearchTerm}
+  difficultyFilter={difficultyFilter}
+  onDifficultyChange={setDifficultyFilter}
+/>
               )}
               <AlertPanel alerts={aiAlerts} />
             </div>
@@ -480,15 +512,30 @@ const handleDeleteAssessment = async (id) => {
       </div>
 
       {/* Modals */}
-      {showAddQuestion && (
-        <AddQuestionModal
-          onClose={() => setShowAddQuestion(false)}
-          onSuccess={(newQ) => {
-            setQuestions((prev) => [newQ, ...prev]);
-            setShowAddQuestion(false);
-          }}
-        />
-      )}
+     {showAddQuestion && (
+  <AddQuestionModal
+    question={editingQuestion}
+    isEdit={!!editingQuestion}
+    onClose={() => {
+      setShowAddQuestion(false);
+      setEditingQuestion(null);
+    }}
+    onSuccess={(savedQuestion) => {
+      if (editingQuestion) {
+        setQuestions((prev) =>
+          prev.map((q) =>
+            q._id === savedQuestion._id ? savedQuestion : q
+          )
+        );
+      } else {
+        setQuestions((prev) => [savedQuestion, ...prev]);
+      }
+
+      setShowAddQuestion(false);
+      setEditingQuestion(null);
+    }}
+  />
+)}
       {showAddAssessment && (
   <AddAssessmentModal
     assessment={editingAssessment}

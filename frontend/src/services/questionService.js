@@ -29,3 +29,9 @@ export const deleteQuestion = async (id) => {
   const res = await API.delete(`/questions/${id}`);
   return res.data;
 };
+
+// ======================= PUBLISH QUESTION =======================
+export const publishQuestion = async (id) => {
+  const res = await API.patch(`/questions/${id}/publish`);
+  return res.data;
+};

@@ -1,28 +1,45 @@
 import { useState } from "react";
 import { X, Plus, Trash2, Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
-import { createQuestion } from "@/services/questionService";
+import {
+  createQuestion,
+  updateQuestion,
+} from "@/services/questionService";
 
 const DIFFICULTY_OPTIONS = ["Easy", "Medium", "Hard"];
 const LANGUAGE_OPTIONS = ["python", "javascript", "cpp", "java"];
 
 const emptyTestCase = () => ({ input: "", output: "" });
 
-export default function AddQuestionModal({ onClose, onSuccess }) {
-  const [form, setForm] = useState({
-    title: "",
-    description: "",
-    difficulty: "Easy",
-    marks: 10,
-    tags: "",
-    constraints: "",
-    supportedLanguages: ["python"],
-    timeLimit: 1,
-    memoryLimit: 256,
-    status: "draft",
-  });
+export default function AddQuestionModal({
+  onClose,
+  onSuccess,
+  question = null,
+  isEdit = false,
+}) {
+ const [form, setForm] = useState({
+  title: question?.title || "",
+  description: question?.description || "",
+  difficulty: question?.difficulty || "Easy",
+  marks: question?.marks || 10,
+  tags: question?.tags?.join(", ") || "",
+  constraints: question?.constraints || "",
+  supportedLanguages: question?.supportedLanguages || ["python"],
+  timeLimit: question?.timeLimit || 1,
+  memoryLimit: question?.memoryLimit || 256,
+  status: question?.status || "draft",
+});
 
-  const [sampleTestCases, setSampleTestCases] = useState([emptyTestCase()]);
-  const [hiddenTestCases, setHiddenTestCases] = useState([emptyTestCase()]);
+ const [sampleTestCases, setSampleTestCases] = useState(
+  question?.sampleTestCases?.length
+    ? question.sampleTestCases
+    : [emptyTestCase()]
+);
+
+const [hiddenTestCases, setHiddenTestCases] = useState(
+  question?.hiddenTestCases?.length
+    ? question.hiddenTestCases
+    : [emptyTestCase()]
+);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -88,8 +105,14 @@ export default function AddQuestionModal({ onClose, onSuccess }) {
         sampleTestCases,
         hiddenTestCases,
       };
-      const data = await createQuestion(payload);
-      setSuccess("Question created successfully!");
+    const data = isEdit
+  ? await updateQuestion(question._id, payload)
+  : await createQuestion(payload);
+     setSuccess(
+  isEdit
+    ? "Question updated successfully!"
+    : "Question created successfully!"
+);
       setTimeout(() => {
         onSuccess && onSuccess(data.question);
         onClose();
@@ -107,9 +130,16 @@ export default function AddQuestionModal({ onClose, onSuccess }) {
         {/* Header */}
         <div className="sticky top-0 z-10 flex items-center justify-between border-b border-white/10 bg-zinc-950/95 px-6 py-4 backdrop-blur">
           <div>
-            <h2 className="text-lg font-bold text-white">Create Coding Question</h2>
-            <p className="text-xs text-zinc-400">Add a new question to your question bank</p>
-          </div>
+  <h2 className="text-lg font-bold text-white">
+    {isEdit ? "Edit Coding Question" : "Create Coding Question"}
+  </h2>
+
+  <p className="text-xs text-zinc-400">
+    {isEdit
+      ? "Update the coding question"
+      : "Add a new question to your question bank"}
+  </p>
+</div>
           <button
             onClick={onClose}
             className="rounded-xl border border-white/10 bg-white/5 p-2 text-zinc-400 transition hover:border-rose-400/40 hover:text-white"
@@ -393,11 +423,14 @@ export default function AddQuestionModal({ onClose, onSuccess }) {
               disabled={loading}
               className="flex items-center gap-2 rounded-xl bg-emerald-500 px-6 py-2.5 text-sm font-bold text-black transition hover:bg-emerald-400 disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              {loading ? (
-                <><Loader2 className="h-4 w-4 animate-spin" /> Creating…</>
-              ) : (
-                "Create Question"
-              )}
+            {loading ? (
+  <>
+    <Loader2 className="h-4 w-4 animate-spin" />
+    {isEdit ? " Updating..." : " Creating..."}
+  </>
+) : (
+  isEdit ? "Update Question" : "Create Question"
+)}
             </button>
           </div>
         </form>
