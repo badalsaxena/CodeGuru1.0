@@ -205,4 +205,4 @@ If everything is configured correctly, the API should return installed languages
 
 # Developed By
 
-CodeGuru Development Team
+CodeGuru Development by Badal Saxena & Team
