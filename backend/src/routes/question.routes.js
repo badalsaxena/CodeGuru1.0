@@ -9,7 +9,9 @@ const {
   getAllQuestions,
   getQuestionById,
   updateQuestion,
-  deleteQuestion
+  deleteQuestion,
+  publishQuestion,
+  unpublishQuestion,
 } = require("../controllers/question.controller");
 
 // Create Question
@@ -22,5 +24,10 @@ router.get("/:id", verifyToken, getQuestionById);
 router.put("/:id", verifyToken, updateQuestion);
 //Delete Question
 router.delete("/:id", verifyToken, deleteQuestion);
+// Publish Question
+router.patch("/:id/publish", verifyToken, publishQuestion);
+
+// Unpublish Question
+router.patch("/:id/unpublish", verifyToken, unpublishQuestion);
 
 module.exports = router;

@@ -334,6 +334,89 @@ const deleteQuestion = async (req, res) => {
     });
   }
 };
+// ====================== PUBLISH QUESTION ======================
+
+const publishQuestion = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const question = await Question.findById(id);
+
+    if (!question) {
+      return res.status(404).json({
+        success: false,
+        message: "Question not found",
+      });
+    }
+
+    if (question.createdBy.toString() !== req.user.id) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not authorized to publish this question",
+      });
+    }
+
+    question.status = "published";
+
+    await question.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Question Published Successfully",
+      question,
+    });
+
+  } catch (error) {
+    console.error("❌ Publish Question Error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+    });
+  }
+};
+
+// ====================== UNPUBLISH QUESTION ======================
+
+const unpublishQuestion = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const question = await Question.findById(id);
+
+    if (!question) {
+      return res.status(404).json({
+        success: false,
+        message: "Question not found",
+      });
+    }
+
+    if (question.createdBy.toString() !== req.user.id) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not authorized to unpublish this question",
+      });
+    }
+
+    question.status = "draft";
+
+    await question.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Question Unpublished Successfully",
+      question,
+    });
+
+  } catch (error) {
+    console.error("❌ Unpublish Question Error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+    });
+  }
+};
 
 module.exports = {
   createQuestion,
@@ -341,4 +424,6 @@ module.exports = {
   getQuestionById,
   updateQuestion,
   deleteQuestion,
+  publishQuestion,
+  unpublishQuestion,
 };
