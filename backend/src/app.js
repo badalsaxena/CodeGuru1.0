@@ -11,6 +11,8 @@ const studentRoutes = require("./routes/student.routes");
 const submissionRoutes = require("./routes/submission.routes");
 const attemptRoutes = require("./routes/attempt.routes");
 const runCodeRoutes = require("./routes/runCode.routes");
+const leaderboardRoutes = require("./routes/leaderboard.routes");
+const analyticsRoutes = require("./routes/analytics.routes");
 
 const app = express();
 
@@ -40,6 +42,8 @@ app.use("/api/v1/student", studentRoutes);
 app.use("/api/v1/submissions", submissionRoutes);
 app.use("/api/v1/attempts", attemptRoutes);
 app.use("/api/v1/run-code", runCodeRoutes);
+app.use("/api/v1/leaderboard", leaderboardRoutes);
+app.use("/api/v1/analytics", analyticsRoutes);
 
 // ======================= Test Route =======================
 
