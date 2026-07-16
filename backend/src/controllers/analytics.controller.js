@@ -247,7 +247,134 @@ const averageScore =
     });
   }
 };
+
+// ====================== ASSESSMENT RESULTS ======================
+
+const getAssessmentResults = async (req, res) => {
+  try {
+    const { assessmentId } = req.params;
+
+// ====================== VALIDATE ASSESSMENT ======================
+
+const assessment = await Assessment.findById(assessmentId).lean();
+
+if (!assessment) {
+  return res.status(404).json({
+    success: false,
+    message: "Assessment not found",
+  });
+}
+
+// ====================== ACCESS CONTROL ======================
+
+// Students are not allowed
+if (req.user.role === "student") {
+  return res.status(403).json({
+    success: false,
+    message: "Students are not authorized to view results",
+  });
+}
+
+// Teacher can view only their own assessment
+if (
+  req.user.role === "teacher" &&
+  assessment.teacher.toString() !== req.user.id
+) {
+  return res.status(403).json({
+    success: false,
+    message: "You are not authorized to view these results",
+  });
+}
+
+// Admin can view everything
+
+// ====================== GET SUBMITTED ATTEMPTS ======================
+
+const attempts = await Attempt.find({
+  assessment: assessmentId,
+  status: "submitted",
+})
+.populate("student", "fullName email")
+.select(
+  "student score solvedQuestions totalQuestions startedAt endedAt"
+)
+.lean();
+
+// ====================== FORMAT RESULTS ======================
+
+const results = attempts.map((attempt) => ({
+
+  
+  studentId: attempt.student._id,
+  studentName: attempt.student.fullName,
+  email: attempt.student.email,
+
+  score: attempt.score,
+  solvedQuestions: attempt.solvedQuestions,
+  totalQuestions: attempt.totalQuestions,
+
+  status:
+    attempt.score >= assessment.totalMarks * 0.4
+      ? "Pass"
+      : "Fail",
+
+  startedAt: attempt.startedAt,
+  endedAt: attempt.endedAt,
+  timeTakenMinutes:
+  attempt.startedAt && attempt.endedAt
+    ? Math.round(
+        (new Date(attempt.endedAt) -
+          new Date(attempt.startedAt)) / 60000
+      )
+    : null,
+}));
+
+  // ====================== SORT BY SCORE ======================
+
+results.sort((a, b) => {
+  if (b.score !== a.score) {
+    return b.score - a.score;
+  }
+
+  return (
+    new Date(a.endedAt).getTime() -
+    new Date(b.endedAt).getTime()
+  );
+});
+
+// ====================== ASSIGN RANK ======================
+
+results.forEach((result, index) => {
+  result.rank = index + 1;
+}); 
+
+   return res.status(200).json({
+  success: true,
+
+  assessment: {
+    id: assessment._id,
+    title: assessment.title,
+  },
+
+ // Currently only submitted students are tracked.
+// Update when enrollment feature is added.
+totalStudents: results.length,
+
+  results,
+});
+
+  } catch (error) {
+    console.error("❌ Assessment Results Error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+    });
+  }
+};
+
 module.exports = {
   getAssessmentOverview,
   getQuestionAnalytics,
+  getAssessmentResults,
 };
