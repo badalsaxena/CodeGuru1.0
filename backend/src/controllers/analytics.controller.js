@@ -373,8 +373,143 @@ totalStudents: results.length,
   }
 };
 
+// ====================== STUDENT RESULT DETAILS ======================
+
+const getStudentResultDetails = async (req, res) => {
+  try {
+    const { assessmentId, studentId } = req.params;
+
+// ====================== VALIDATE ASSESSMENT ======================
+
+const assessment = await Assessment.findById(assessmentId).lean();
+
+if (!assessment) {
+  return res.status(404).json({
+    success: false,
+    message: "Assessment not found",
+  });
+}
+
+// ====================== ACCESS CONTROL ======================
+
+// Students are not allowed
+if (req.user.role === "student") {
+  return res.status(403).json({
+    success: false,
+    message: "Students are not authorized to view results",
+  });
+}
+
+// Teacher can view only their own assessment
+if (
+  req.user.role === "teacher" &&
+  assessment.teacher.toString() !== req.user.id
+) {
+  return res.status(403).json({
+    success: false,
+    message: "You are not authorized to view these results",
+  });
+}
+
+// Admin can view everything
+
+// ====================== GET STUDENT ATTEMPT ======================
+
+const attempt = await Attempt.findOne({
+  assessment: assessmentId,
+  student: studentId,
+  status: "submitted",
+})
+.populate("student", "fullName email")
+.lean();
+
+if (!attempt) {
+  return res.status(404).json({
+    success: false,
+    message: "Student result not found",
+  });
+}
+
+// ====================== GET SUBMISSIONS ======================
+
+const submissions = await Submission.find({
+  _id: { $in: attempt.submissions },
+})
+.populate("question", "title marks")
+.lean();
+
+// ====================== FORMAT QUESTION RESULTS ======================
+
+const questionResults = submissions.map((submission) => ({
+  questionId: submission.question._id,
+  title: submission.question.title,
+
+  language: submission.language,
+
+  score: submission.score,
+  maxMarks: submission.question.marks,
+
+  status: submission.status,
+
+  passedTestCases: submission.passedTestCases,
+  totalTestCases: submission.totalTestCases,
+
+  executionTime: submission.executionTime,
+  memoryUsed: submission.memoryUsed,
+}));
+
+return res.status(200).json({
+  success: true,
+
+  student: {
+    id: attempt.student._id,
+    fullName: attempt.student.fullName,
+    email: attempt.student.email,
+  },
+
+  assessment: {
+    id: assessment._id,
+    title: assessment.title,
+    totalMarks: assessment.totalMarks,
+  },
+
+  result: {
+    score: attempt.score,
+    solvedQuestions: attempt.solvedQuestions,
+    totalQuestions: attempt.totalQuestions,
+
+    status:
+      attempt.score >= assessment.totalMarks * 0.4
+        ? "Pass"
+        : "Fail",
+
+    timeTakenMinutes:
+      attempt.startedAt && attempt.endedAt
+        ? Math.round(
+            (new Date(attempt.endedAt) -
+              new Date(attempt.startedAt)) / 60000
+          )
+        : null,
+  },
+
+  totalQuestionResults: questionResults.length,
+
+  questionResults,
+});
+
+  } catch (error) {
+    console.error("❌ Student Result Details Error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+    });
+  }
+};
+
 module.exports = {
   getAssessmentOverview,
   getQuestionAnalytics,
   getAssessmentResults,
+  getStudentResultDetails,
 };
