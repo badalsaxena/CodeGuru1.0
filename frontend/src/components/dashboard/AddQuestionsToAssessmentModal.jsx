@@ -3,12 +3,17 @@ import { X, Loader2, AlertCircle, CheckCircle2, Search } from "lucide-react";
 import { getQuestions } from "@/services/questionService";
 import { addQuestionsToAssessment } from "@/services/assessmentService";
 
+const getErrorMessage = (err, fallback) =>
+  err?.response?.data?.message || err?.message || fallback;
+
+const getId = (item) => item?._id || item;
+
 export default function AddQuestionsToAssessmentModal({ assessment, onClose, onSuccess }) {
   const [questions, setQuestions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [selectedIds, setSelectedIds] = useState(
-    assessment?.questions?.map((q) => q._id || q) || []
+    assessment?.questions?.map(getId) || []
   );
   
   const [submitLoading, setSubmitLoading] = useState(false);
@@ -19,9 +24,16 @@ export default function AddQuestionsToAssessmentModal({ assessment, onClose, onS
     const fetchQs = async () => {
       try {
         const data = await getQuestions();
-        setQuestions(data.questions || []);
+        const publishedQuestions = (data.questions || []).filter(
+          (question) => question.status === "published"
+        );
+        const publishedIds = new Set(publishedQuestions.map((question) => question._id));
+
+        setQuestions(publishedQuestions);
+        setSelectedIds((prev) => prev.filter((id) => publishedIds.has(id)));
       } catch (err) {
         console.error(err);
+        setError(getErrorMessage(err, "Failed to load questions."));
       } finally {
         setLoading(false);
       }
@@ -36,22 +48,27 @@ export default function AddQuestionsToAssessmentModal({ assessment, onClose, onS
   };
 
   const filteredQuestions = questions.filter((q) =>
-    q.title.toLowerCase().includes(search.toLowerCase())
+    (q.title || "").toLowerCase().includes(search.toLowerCase())
   );
 
   const handleSubmit = async () => {
     setError("");
     setSuccess("");
+    if (!assessment?._id) {
+      setError("Assessment ID is missing.");
+      return;
+    }
+
     setSubmitLoading(true);
     try {
       const data = await addQuestionsToAssessment(assessment._id, selectedIds);
-      setSuccess("Questions added successfully!");
+      setSuccess("Questions updated successfully!");
       setTimeout(() => {
         onSuccess && onSuccess(data.assessment);
         onClose();
       }, 1000);
     } catch (err) {
-      setError(err.message || "Failed to add questions.");
+      setError(getErrorMessage(err, "Failed to update questions."));
     } finally {
       setSubmitLoading(false);
     }
@@ -153,7 +170,7 @@ export default function AddQuestionsToAssessmentModal({ assessment, onClose, onS
             </button>
             <button
               onClick={handleSubmit}
-              disabled={submitLoading}
+              disabled={loading || submitLoading}
               className="flex items-center gap-2 rounded-xl bg-cyan-500 px-6 py-2.5 text-sm font-bold text-black transition hover:bg-cyan-400 disabled:opacity-60"
             >
               {submitLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save Changes"}

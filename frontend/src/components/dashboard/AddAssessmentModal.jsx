@@ -5,6 +5,9 @@ import {
   updateAssessment,
 } from "@/services/assessmentService";
 
+const getErrorMessage = (err, fallback) =>
+  err?.response?.data?.message || err?.message || fallback;
+
 export default function AddAssessmentModal({
   onClose,
   onSuccess,
@@ -62,12 +65,14 @@ export default function AddAssessmentModal({
     ? "Assessment updated successfully!"
     : "Assessment created successfully!"
 );
-      setTimeout(() => {
-        onSuccess && onSuccess(data.assessment);
+      setTimeout(async () => {
+        if (onSuccess) {
+          await onSuccess(data.assessment);
+        }
         onClose();
       }, 1200);
     } catch (err) {
-      setError(err.message || "Failed to create assessment. Try again.");
+      setError(getErrorMessage(err, "Failed to save assessment. Try again."));
     } finally {
       setLoading(false);
     }

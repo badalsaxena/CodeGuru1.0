@@ -18,6 +18,7 @@ import {
 
 import {
   getAssessments,
+  getAssessmentById,
   publishAssessment,
   unpublishAssessment,
   deleteAssessment,
@@ -71,13 +72,21 @@ const buildStats = (questions, assessments) => [
   },
 ];
 
-const TeacherPage = () => {
-  const token = localStorage.getItem("token");
-  const user = JSON.parse(localStorage.getItem("user"));
-
-  if (!token || user?.role !== "teacher") {
+const getStoredUser = () => {
+  try {
+    return JSON.parse(localStorage.getItem("user"));
+  } catch {
     return null;
   }
+};
+
+const getErrorMessage = (err, fallback) =>
+  err?.response?.data?.message || err?.message || fallback;
+
+const TeacherPage = () => {
+  const token = localStorage.getItem("token");
+  const user = getStoredUser();
+  const isTeacher = Boolean(token && user?.role === "teacher");
 
   const [activeSection, setActiveSection] = useState("dashboard");
 
@@ -109,20 +118,25 @@ const TeacherPage = () => {
 
   // ── Fetch Questions ──────────────────────────────────────────────
   const fetchQuestions = useCallback(async () => {
+    if (!isTeacher) return;
+
     try {
       setQuestionsLoading(true);
+      setQuestionsError("");
       const data = await getQuestions();
       setQuestions(data.questions || []);
     } catch (err) {
-      setQuestionsError("Failed to load questions. Is the backend running?");
+      setQuestionsError(getErrorMessage(err, "Failed to load questions. Is the backend running?"));
       console.error(err);
     } finally {
       setQuestionsLoading(false);
     }
-  }, []);
+  }, [isTeacher]);
 
   // ── Fetch Assessments ────────────────────────────────────────────
   const fetchAssessments = useCallback(async () => {
+    if (!isTeacher) return;
+
     try {
       setAssessmentsLoading(true);
       const data = await getAssessments();
@@ -132,7 +146,7 @@ const TeacherPage = () => {
     } finally {
       setAssessmentsLoading(false);
     }
-  }, []);
+  }, [isTeacher]);
 
   useEffect(() => {
     fetchQuestions();
@@ -146,7 +160,7 @@ const TeacherPage = () => {
       await deleteQuestion(id);
       setQuestions((prev) => prev.filter((q) => q._id !== id));
     } catch (err) {
-      alert("Failed to delete question: " + (err.message || "Unknown error"));
+      alert("Failed to delete question: " + getErrorMessage(err, "Unknown error"));
     }
   };
 
@@ -159,17 +173,11 @@ const TeacherPage = () => {
   try {
     await publishQuestion(id);
 
-    setQuestions((prev) =>
-      prev.map((q) =>
-        q._id === id
-          ? { ...q, status: "published" }
-          : q
-      )
-    );
+    await fetchQuestions();
 
     alert("Question published successfully!");
   } catch (err) {
-    alert(err.response?.data?.message || "Failed to publish question.");
+    alert(getErrorMessage(err, "Failed to publish question."));
   }
 };
   
@@ -181,7 +189,7 @@ const handlePublishAssessment = async (id) => {
 
     alert("Assessment published successfully!");
   } catch (err) {
-    alert(err.response?.data?.message || "Failed to publish assessment.");
+    alert(getErrorMessage(err, "Failed to publish assessment."));
   }
 };
 
@@ -193,7 +201,7 @@ const handleUnpublishAssessment = async (id) => {
 
     alert("Assessment moved to draft.");
   } catch (err) {
-    alert(err.response?.data?.message || "Failed to unpublish assessment.");
+    alert(getErrorMessage(err, "Failed to unpublish assessment."));
   }
 };
 
@@ -211,7 +219,7 @@ const handleDeleteAssessment = async (id) => {
 
     alert("Assessment deleted successfully!");
   } catch (err) {
-    alert(err.response?.data?.message || "Failed to delete assessment.");
+    alert(getErrorMessage(err, "Failed to delete assessment."));
   }
 };
 
@@ -219,13 +227,17 @@ const handleDeleteAssessment = async (id) => {
   // ── Filtered Questions ───────────────────────────────────────────
   const filteredQuestions = useMemo(() => {
     return questions.filter((q) => {
-      const matchSearch = q.title.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchSearch = (q.title || "").toLowerCase().includes(searchTerm.toLowerCase());
       const matchDifficulty = difficultyFilter === "All" || q.difficulty === difficultyFilter;
       return matchSearch && matchDifficulty;
     });
   }, [questions, searchTerm, difficultyFilter]);
 
   const stats = useMemo(() => buildStats(questions, assessments), [questions, assessments]);
+
+  if (!isTeacher) {
+    return null;
+  }
 
   // ── Render Content ───────────────────────────────────────────────
   const renderContent = () => {
@@ -533,6 +545,7 @@ const handleDeleteAssessment = async (id) => {
 
       setShowAddQuestion(false);
       setEditingQuestion(null);
+      fetchQuestions();
     }}
   />
 )}
@@ -555,6 +568,7 @@ const handleDeleteAssessment = async (id) => {
 
       setShowAddAssessment(false);
       setEditingAssessment(null);
+      fetchAssessments();
     }}
   />
 )}
@@ -562,10 +576,22 @@ const handleDeleteAssessment = async (id) => {
         <AddQuestionsToAssessmentModal
           assessment={manageQuestionsAssessment}
           onClose={() => setManageQuestionsAssessment(null)}
-          onSuccess={(updatedA) => {
-            setAssessments((prev) =>
-              prev.map((a) => (a._id === updatedA._id ? updatedA : a))
-            );
+          onSuccess={async (updatedA) => {
+            try {
+              const data = await getAssessmentById(updatedA._id);
+              const refreshedAssessment = data.assessment || updatedA;
+
+              setAssessments((prev) =>
+                prev.map((a) =>
+                  a._id === refreshedAssessment._id ? refreshedAssessment : a
+                )
+              );
+            } catch (err) {
+              console.error("Failed to refresh assessment:", err);
+              setAssessments((prev) =>
+                prev.map((a) => (a._id === updatedA._id ? updatedA : a))
+              );
+            }
           }}
         />
       )}

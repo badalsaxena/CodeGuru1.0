@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import {
   ArrowLeft, Play, Send, Loader2, CheckCircle2, XCircle,
-  Clock, MemoryStick, ChevronDown, Terminal, BookOpen,
+  Clock, ChevronDown, Terminal, BookOpen,
 } from "lucide-react";
 import { runCode } from "@/services/runCodeService";
 import { createSubmission } from "@/services/submissionService";
@@ -25,6 +25,18 @@ const DIFF_COLORS = {
   Medium: "text-amber-400 bg-amber-500/10 border-amber-500/20",
   Hard: "text-rose-400 bg-rose-500/10 border-rose-500/20",
 };
+
+const getErrorMessage = (err, fallback) =>
+  err?.response?.data?.message || err?.message || fallback;
+
+const getRunOutput = (runResult) =>
+  runResult?.result?.run?.stdout ||
+  runResult?.result?.run?.stderr ||
+  runResult?.result?.compile?.stdout ||
+  runResult?.result?.compile?.stderr ||
+  runResult?.output ||
+  runResult?.message ||
+  "No output.";
 
 export default function CodeEditorPage({ question, assessmentId, onBack }) {
   const [language, setLanguage] = useState("python");
@@ -54,7 +66,7 @@ export default function CodeEditorPage({ question, assessmentId, onBack }) {
       });
       setRunResult(data);
     } catch (err) {
-      setRunResult({ success: false, output: err.message || "Error running code." });
+      setRunResult({ success: false, output: getErrorMessage(err, "Error running code.") });
     } finally {
       setRunLoading(false);
     }
@@ -62,6 +74,15 @@ export default function CodeEditorPage({ question, assessmentId, onBack }) {
 
   const handleSubmit = async () => {
     if (!code.trim()) return;
+    if (!assessmentId) {
+      setOutputTab("result");
+      setSubmitResult({
+        success: false,
+        message: "Submissions require an active assessment.",
+      });
+      return;
+    }
+
     setSubmitLoading(true);
     setSubmitResult(null);
     setOutputTab("result");
@@ -74,7 +95,7 @@ export default function CodeEditorPage({ question, assessmentId, onBack }) {
       });
       setSubmitResult(data);
     } catch (err) {
-      setSubmitResult({ success: false, message: err.message || "Submission failed." });
+      setSubmitResult({ success: false, message: getErrorMessage(err, "Submission failed.") });
     } finally {
       setSubmitLoading(false);
     }
@@ -138,7 +159,7 @@ export default function CodeEditorPage({ question, assessmentId, onBack }) {
           {/* Submit */}
           <button
             onClick={handleSubmit}
-            disabled={submitLoading}
+            disabled={submitLoading || !assessmentId}
             className="flex items-center gap-2 rounded-xl bg-emerald-500 px-4 py-1.5 text-sm font-bold text-black transition hover:bg-emerald-400 disabled:opacity-60"
           >
             {submitLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
@@ -316,7 +337,7 @@ export default function CodeEditorPage({ question, assessmentId, onBack }) {
                       {runResult.success ? "Success" : "Error"}
                     </div>
                     <pre className="text-xs text-zinc-300 font-mono whitespace-pre-wrap">
-                      {runResult.output || runResult.message || "No output."}
+                      {getRunOutput(runResult)}
                     </pre>
                   </div>
                 ) : (

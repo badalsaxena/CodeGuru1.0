@@ -2,8 +2,14 @@ import API from "../utils/api";
 
 // ======================= CREATE SUBMISSION =======================
 export const createSubmission = async (data) => {
-  // data: { questionId, assessmentId, code, language }
-  const res = await API.post("/submissions", data);
+  const { questionId, assessmentId, ...rest } = data;
+  const payload = {
+    ...rest,
+    question: data.question || questionId,
+    assessment: data.assessment || assessmentId,
+  };
+
+  const res = await API.post("/submissions", payload);
   return res.data;
 };
 
