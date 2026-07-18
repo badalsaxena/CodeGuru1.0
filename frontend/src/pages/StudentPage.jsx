@@ -50,6 +50,9 @@ const StudentPage = () => {
   const [editorQuestion, setEditorQuestion] = useState(null);
   const [editorAssessmentId, setEditorAssessmentId] = useState(null);
 
+  const [assessment, setAssessment] = useState(null);
+const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
@@ -161,6 +164,9 @@ const dashboardStats = studentStats.map((card) => {
       const data = await getStudentAssessmentById(exam._id);
       const assessment = data.assessment;
       const firstQuestion = assessment?.questions?.[0];
+      setAssessment(assessment);
+setCurrentQuestionIndex(0);
+      
 
       if (!firstQuestion?._id) {
         alert("Unable to load questions for this assessment.");
@@ -181,14 +187,20 @@ const dashboardStats = studentStats.map((card) => {
   // If code editor is open, show it
   if (editorQuestion) {
     return (
-      <CodeEditorPage
-        question={editorQuestion}
-        assessmentId={editorAssessmentId}
-        onBack={() => {
-          setEditorQuestion(null);
-          setEditorAssessmentId(null);
-        }}
-      />
+     <CodeEditorPage
+  question={editorQuestion}
+  assessment={assessment}
+  currentQuestionIndex={currentQuestionIndex}
+  setCurrentQuestionIndex={setCurrentQuestionIndex}
+  setEditorQuestion={setEditorQuestion}
+  assessmentId={editorAssessmentId}
+  onBack={() => {
+    setEditorQuestion(null);
+    setEditorAssessmentId(null);
+    setAssessment(null);
+    setCurrentQuestionIndex(0);
+  }}
+/>
     );
   }
 

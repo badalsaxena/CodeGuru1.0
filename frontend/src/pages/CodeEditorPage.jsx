@@ -1,10 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   ArrowLeft, Play, Send, Loader2, CheckCircle2, XCircle,
   Clock, ChevronDown, Terminal, BookOpen,
 } from "lucide-react";
 import { runCode } from "@/services/runCodeService";
 import { createSubmission } from "@/services/submissionService";
+
 
 const LANGUAGES = [
   { id: "python", label: "Python 3", extension: ".py" },
@@ -38,7 +39,26 @@ const getRunOutput = (runResult) =>
   runResult?.message ||
   "No output.";
 
-export default function CodeEditorPage({ question, assessmentId, onBack }) {
+  
+export default function CodeEditorPage({
+  question,
+  assessment,
+  currentQuestionIndex,
+  setCurrentQuestionIndex,
+  setEditorQuestion,
+  assessmentId,
+  onBack,
+}) {
+ const totalQuestions = assessment?.questions?.length || 1;
+
+const currentQuestion = currentQuestionIndex + 1;
+
+const progress = useMemo(() => {
+  return Math.round((currentQuestion / totalQuestions) * 100);
+}, [currentQuestion, totalQuestions]);
+
+// Timer backend se baad me aayega
+const remainingTime = "--:--:--";
   const [language, setLanguage] = useState("python");
   const [code, setCode] = useState(BOILERPLATE["python"]);
   const [activeTab, setActiveTab] = useState("problem"); // problem | testcases
@@ -101,75 +121,162 @@ export default function CodeEditorPage({ question, assessmentId, onBack }) {
     }
   };
 
+  const handleQuestionChange = (index) => {
+  if (!assessment?.questions?.[index]) return;
+
+  setCurrentQuestionIndex(index);
+  setEditorQuestion(assessment.questions[index]);
+
+  setCode("");
+setRunResult(null);
+setSubmitResult(null);
+};
+
+const handlePrevious = () => {
+  if (currentQuestionIndex === 0) return;
+
+  const newIndex = currentQuestionIndex - 1;
+
+  setCurrentQuestionIndex(newIndex);
+  setEditorQuestion(assessment.questions[newIndex]);
+  setCode("");
+   setRunResult(null);
+  setSubmitResult(null);
+};
+
+const handleNext = () => {
+  if (currentQuestionIndex >= assessment.questions.length - 1) return;
+
+  const newIndex = currentQuestionIndex + 1;
+
+  setCurrentQuestionIndex(newIndex);
+  setEditorQuestion(assessment.questions[newIndex]);
+  setCode("");
+   setRunResult(null);
+  setSubmitResult(null);
+};
+
+
+
   const selectedLang = LANGUAGES.find((l) => l.id === language);
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col">
       {/* Top Bar */}
-      <header className="flex items-center justify-between border-b border-white/8 bg-zinc-900/80 px-4 py-3 backdrop-blur">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={onBack}
-            className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-sm text-zinc-300 transition hover:border-zinc-500 hover:text-white"
+   <header className="flex items-center justify-between border-b border-white/10 bg-zinc-900 px-6 py-3">
+
+  {/* LEFT */}
+
+  <div className="flex items-center gap-4">
+
+    <button
+      onClick={onBack}
+      className="flex h-11 w-11 items-center justify-center rounded-xl border border-zinc-700 bg-zinc-800 transition hover:border-emerald-500 hover:bg-zinc-700"
+    >
+      <ArrowLeft className="h-5 w-5" />
+    </button>
+
+    <div>
+
+      <h2 className="text-2xl font-bold text-white">
+        {question?.title || "Coding Problem"}
+      </h2>
+
+      <div className="mt-1 flex items-center gap-3">
+
+        <span
+          className={`rounded-full px-2 py-1 text-xs font-semibold border ${
+            DIFF_COLORS[question?.difficulty] || DIFF_COLORS.Easy
+          }`}
+        >
+          {question?.difficulty || "Easy"}
+        </span>
+
+        <span className="text-xs text-zinc-400">
+          {question?.marks ?? 0} Marks
+        </span>
+
+        <span className="text-xs text-zinc-400">
+          {question?.timeLimit ?? 0}s
+        </span>
+
+      </div>
+
+    </div>
+
+  </div>
+
+  {/* CENTER */}
+
+  <div className="w-[320px]">
+
+    <div className="mb-2 flex items-center justify-between text-xs text-zinc-400">
+
+      <span>
+        Question {currentQuestion} / {totalQuestions}
+      </span>
+
+      <span>
+        {progress}%
+      </span>
+
+    </div>
+
+    <div className="h-2 overflow-hidden rounded-full bg-zinc-800">
+
+      <div
+        className="h-full rounded-full bg-emerald-500 transition-all duration-500"
+        style={{
+          width: `${progress}%`,
+        }}
+      />
+
+    </div>
+
+  </div>
+
+  {/* RIGHT */}
+
+  <div className="flex items-center gap-5">
+
+    <div className="text-right">
+
+      <p className="text-[11px] uppercase tracking-wider text-zinc-500">
+        Remaining Time
+      </p>
+
+      <h2 className="text-2xl font-bold text-emerald-400">
+        {remainingTime || "--:--:--"}
+      </h2>
+
+    </div>
+
+    <div className="relative">
+
+      <select
+        value={language}
+        onChange={(e) => setLanguage(e.target.value)}
+        className="appearance-none rounded-xl border border-zinc-700 bg-zinc-800 px-4 py-2 pr-10 text-sm font-medium text-white outline-none transition focus:border-emerald-500"
+      >
+        {LANGUAGES.map((lang) => (
+          <option
+            key={lang.id}
+            value={lang.id}
           >
-            <ArrowLeft className="h-4 w-4" /> Back
-          </button>
-          <div>
-            <p className="text-sm font-semibold text-white">
-              {question?.title || "Coding Problem"}
-            </p>
-            {question && (
-              <div className="flex items-center gap-2 mt-0.5">
-                <span className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold ${DIFF_COLORS[question.difficulty] || DIFF_COLORS.Easy}`}>
-                  {question.difficulty}
-                </span>
-                <span className="text-[10px] text-zinc-500">{question.marks} marks</span>
-                <Clock className="h-3 w-3 text-zinc-500" />
-                <span className="text-[10px] text-zinc-500">{question.timeLimit}s limit</span>
-              </div>
-            )}
-          </div>
-        </div>
+            {lang.label}
+          </option>
+        ))}
+      </select>
 
-        <div className="flex items-center gap-3">
-          {/* Language Selector */}
-          <div className="relative">
-            <select
-              value={language}
-              onChange={(e) => setLanguage(e.target.value)}
-              className="appearance-none rounded-xl border border-white/10 bg-zinc-800 pl-3 pr-8 py-1.5 text-sm text-white outline-none focus:border-emerald-500/50 transition"
-            >
-              {LANGUAGES.map((l) => (
-                <option key={l.id} value={l.id}>{l.label}</option>
-              ))}
-            </select>
-            <ChevronDown className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-400" />
-          </div>
+      <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
 
-          {/* Run */}
-          <button
-            onClick={handleRun}
-            disabled={runLoading}
-            className="flex items-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-1.5 text-sm font-semibold text-emerald-300 transition hover:bg-emerald-500/20 disabled:opacity-60"
-          >
-            {runLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
-            Run
-          </button>
+    </div>
 
-          {/* Submit */}
-          <button
-            onClick={handleSubmit}
-            disabled={submitLoading || !assessmentId}
-            className="flex items-center gap-2 rounded-xl bg-emerald-500 px-4 py-1.5 text-sm font-bold text-black transition hover:bg-emerald-400 disabled:opacity-60"
-          >
-            {submitLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-            Submit
-          </button>
-        </div>
-      </header>
+  </div>
 
+</header>
       {/* Main Layout */}
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 overflow-hidden relative">
         {/* ─── LEFT PANEL: Problem Description ─── */}
         <div className="w-[42%] border-r border-white/8 flex flex-col overflow-hidden">
           {/* Tabs */}
@@ -272,6 +379,21 @@ export default function CodeEditorPage({ question, assessmentId, onBack }) {
 
         {/* ─── RIGHT PANEL: Editor + Output ─── */}
         <div className="flex-1 flex flex-col overflow-hidden">
+          <div className="flex items-center justify-end gap-2 border-b border-white/10 bg-zinc-900 px-4 py-2">
+  {assessment?.questions?.map((q, index) => (
+    <button
+      key={q._id || index}
+      onClick={() => handleQuestionChange(index)}
+      className={`h-9 w-9 rounded-lg text-sm font-semibold transition ${
+        index === currentQuestionIndex
+          ? "bg-emerald-500 text-black"
+          : "bg-zinc-800 text-zinc-300 hover:bg-zinc-700"
+      }`}
+    >
+      {index + 1}
+    </button>
+  ))}
+</div>
           {/* Code Editor */}
           <div className="flex-1 relative overflow-hidden">
             <div className="flex items-center justify-between border-b border-white/8 bg-zinc-900/60 px-4 py-2">
@@ -302,6 +424,49 @@ export default function CodeEditorPage({ question, assessmentId, onBack }) {
               }}
             />
           </div>
+
+          <div className="flex items-center justify-between border-t border-white/10 bg-zinc-900 px-4 py-3">
+  
+
+  <div className="flex items-center gap-2">
+    <button
+      onClick={handlePrevious}
+      disabled={currentQuestionIndex === 0}
+      className="rounded-lg border border-zinc-700 px-4 py-2 text-sm text-zinc-300 disabled:opacity-40"
+    >
+      Previous
+    </button>
+
+    <button
+      onClick={handleNext}
+      disabled={currentQuestionIndex === totalQuestions - 1}
+      className="rounded-lg border border-zinc-700 px-4 py-2 text-sm text-zinc-300 disabled:opacity-40"
+    >
+      Next
+    </button>
+  </div>
+
+  <div className="flex items-center gap-3">
+    <button
+      onClick={handleRun}
+      disabled={runLoading}
+      className="flex items-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-2 text-sm font-semibold text-emerald-300 hover:bg-emerald-500/20 disabled:opacity-60"
+    >
+      {runLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
+      Run Code
+    </button>
+
+    <button
+      onClick={handleSubmit}
+      disabled={submitLoading || !assessmentId}
+      className="flex items-center gap-2 rounded-xl bg-emerald-500 px-4 py-2 text-sm font-bold text-black hover:bg-emerald-400 disabled:opacity-60"
+    >
+      {submitLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+      Submit
+    </button>
+  </div>
+
+</div>
 
           {/* Output Panel */}
           <div className="border-t border-white/8 bg-zinc-900/60" style={{ minHeight: "180px", maxHeight: "260px" }}>
