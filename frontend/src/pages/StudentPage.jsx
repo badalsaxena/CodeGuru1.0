@@ -72,6 +72,7 @@ const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
       if (assessments[0]?._id) {
         try {
           const leaderboardResponse = await getLeaderboard(assessments[0]._id);
+          console.log("Leaderboard Response:", leaderboardResponse);
           setLeaderboardData(
             (leaderboardResponse.leaderboard || []).map((entry) => ({
               rank: entry.rank,
