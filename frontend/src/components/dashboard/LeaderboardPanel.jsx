@@ -21,13 +21,20 @@ const LeaderboardPanel = ({ leaderboard }) => {
             </tr>
           </thead>
           <tbody className="divide-y divide-white/10 bg-zinc-950/60 text-zinc-300">
+            {leaderboard.length === 0 && (
+              <tr>
+                <td className="px-4 py-6 text-center text-zinc-500" colSpan={6}>
+                  No leaderboard entries yet.
+                </td>
+              </tr>
+            )}
             {leaderboard.map((entry) => (
               <tr key={entry.rank} className={`transition ${entry.name === "You" ? "bg-emerald-500/10" : "hover:bg-white/5"}`}>
                 <td className="px-4 py-3 font-medium text-white">#{entry.rank}</td>
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-3">
                     <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-emerald-400 to-cyan-400 text-sm font-semibold text-black">
-                      {entry.name.charAt(0)}
+                      {(entry.name || "S").charAt(0)}
                     </div>
                     <span>{entry.name}</span>
                   </div>

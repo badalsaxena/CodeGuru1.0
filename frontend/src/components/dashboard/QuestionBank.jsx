@@ -65,7 +65,7 @@ const QuestionBank = ({
                 </div>
                 <p className="text-sm text-zinc-400">{question.description}</p>
                 <div className="flex flex-wrap gap-2">
-                  {question.tags.map((tag) => (
+                  {(question.tags || []).map((tag) => (
                     <span key={tag} className="rounded-full border border-white/10 px-2.5 py-1 text-xs text-zinc-300">
                       {tag}
                     </span>
@@ -89,19 +89,19 @@ const QuestionBank = ({
             <div className="mt-4 grid gap-3 text-sm text-zinc-400 md:grid-cols-2">
               <div>
                 <p className="font-medium text-zinc-300">Constraints</p>
-                <p>{question.constraints}</p>
+                <p>{question.constraints || "Not specified"}</p>
               </div>
               <div>
-                <p className="font-medium text-zinc-300">Input Format</p>
-                <p>{question.inputFormat}</p>
+                <p className="font-medium text-zinc-300">Sample Test Cases</p>
+                <p>{question.sampleTestCases?.length || 0}</p>
               </div>
               <div>
-                <p className="font-medium text-zinc-300">Output Format</p>
-                <p>{question.outputFormat}</p>
+                <p className="font-medium text-zinc-300">Supported Languages</p>
+                <p>{question.supportedLanguages?.join(", ") || "Not specified"}</p>
               </div>
               <div>
                 <p className="font-medium text-zinc-300">Hidden Test Cases</p>
-                <p>{question.hiddenTests}</p>
+                <p>{question.hiddenTestCases?.length || 0}</p>
               </div>
             </div>
 

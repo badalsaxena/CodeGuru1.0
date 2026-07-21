@@ -5,6 +5,9 @@ import {
   updateQuestion,
 } from "@/services/questionService";
 
+const getErrorMessage = (err, fallback) =>
+  err?.response?.data?.message || err?.message || fallback;
+
 const DIFFICULTY_OPTIONS = ["Easy", "Medium", "Hard"];
 const LANGUAGE_OPTIONS = ["python", "javascript", "cpp", "java"];
 
@@ -108,17 +111,19 @@ const [hiddenTestCases, setHiddenTestCases] = useState(
     const data = isEdit
   ? await updateQuestion(question._id, payload)
   : await createQuestion(payload);
-     setSuccess(
+      setSuccess(
   isEdit
     ? "Question updated successfully!"
     : "Question created successfully!"
 );
-      setTimeout(() => {
-        onSuccess && onSuccess(data.question);
+      setTimeout(async () => {
+        if (onSuccess) {
+          await onSuccess(data.question);
+        }
         onClose();
       }, 1200);
     } catch (err) {
-      setError(err.message || "Failed to create question. Try again.");
+      setError(getErrorMessage(err, "Failed to save question. Try again."));
     } finally {
       setLoading(false);
     }

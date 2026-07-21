@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Sidebar from "@/components/dashboard/Sidebar";
 import Header from "@/components/dashboard/Header";
 import StudentDashboardCards from "@/components/dashboard/StudentDashboardCards";
@@ -11,9 +11,9 @@ import StudentNotifications from "@/components/dashboard/StudentNotifications";
 import CodeEditorPage from "@/pages/CodeEditorPage";
 import { getStudentAssessments, startAssessment, getStudentAssessmentById } from "@/services/studentService";
 import { getQuestions } from "@/services/questionService";
+import { getLeaderboard } from "@/services/leaderboardService";
 import {
   studentStats,
-  leaderboard,
   progressSeries,
   topicPerformance,
   notifications,
@@ -22,13 +22,21 @@ import {
 } from "@/data/studentData";
 import { Loader2 } from "lucide-react";
 
-const StudentPage = () => {
-  const token = localStorage.getItem("token");
-  const user = JSON.parse(localStorage.getItem("user"));
-
-  if (!token || user?.role !== "student") {
+const getStoredUser = () => {
+  try {
+    return JSON.parse(localStorage.getItem("user"));
+  } catch {
     return null;
   }
+};
+
+const getErrorMessage = (err, fallback) =>
+  err?.response?.data?.message || err?.message || fallback;
+
+const StudentPage = () => {
+  const token = localStorage.getItem("token");
+  const user = getStoredUser();
+  const isStudent = Boolean(token && user?.role === "student");
 
   const [activeSection, setActiveSection] = useState("dashboard");
 
@@ -36,10 +44,14 @@ const StudentPage = () => {
   const [exams, setExams] = useState([]);
   const [examsLoading, setExamsLoading] = useState(true);
   const [questions, setQuestions] = useState([]);
+  const [leaderboardData, setLeaderboardData] = useState([]);
 
   // Code editor state
   const [editorQuestion, setEditorQuestion] = useState(null);
   const [editorAssessmentId, setEditorAssessmentId] = useState(null);
+
+  const [assessment, setAssessment] = useState(null);
+const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -49,27 +61,60 @@ const StudentPage = () => {
 
   // ── Fetch real published assessments ──────────────────────────
   const fetchExams = useCallback(async () => {
+    if (!isStudent) return;
+
     try {
       setExamsLoading(true);
       const data = await getStudentAssessments();
-      setExams(data.assessments || []);
+      const assessments = data.assessments || [];
+      setExams(assessments);
+
+      if (assessments[0]?._id) {
+        try {
+          const leaderboardResponse = await getLeaderboard(assessments[0]._id);
+          console.log("Leaderboard Response:", leaderboardResponse);
+          setLeaderboardData(
+            (leaderboardResponse.leaderboard || []).map((entry) => ({
+              rank: entry.rank,
+              name: entry.student?.fullName || "Student",
+              solved: `${entry.solvedQuestions}/${entry.totalQuestions}`,
+              accuracy: `${entry.percentage}%`,
+              score: `${entry.score}/${entry.totalMarks}`,
+              badge:
+                entry.percentage >= 90
+                  ? "Elite"
+                  : entry.percentage >= 75
+                    ? "Pro"
+                    : "Rising",
+            }))
+          );
+        } catch (err) {
+          console.error("Failed to load leaderboard:", err);
+          setLeaderboardData([]);
+        }
+      } else {
+        setLeaderboardData([]);
+      }
     } catch (err) {
       console.error("Failed to load exams:", err);
       setExams([]);
+      setLeaderboardData([]);
     } finally {
       setExamsLoading(false);
     }
-  }, []);
+  }, [isStudent]);
 
   // ── Fetch practice problems (questions) ────────────────────────
   const fetchQuestions = useCallback(async () => {
+    if (!isStudent) return;
+
     try {
       const data = await getQuestions();
       setQuestions(data.questions || []);
     } catch (err) {
       console.error("Failed to load questions:", err);
     }
-  }, []);
+  }, [isStudent]);
 
   useEffect(() => {
     fetchExams();
@@ -90,22 +135,73 @@ const dashboardStats = studentStats.map((card) => {
         value: questions.length,
       };
 
+    case "Current Rank": {
+      const userEntry = leaderboardData.find((entry) => entry.name === "You");
+      const firstEntry = leaderboardData[0];
+      return {
+        ...card,
+        value: userEntry ? `#${userEntry.rank}` : firstEntry ? `#${firstEntry.rank}` : "-",
+      };
+    }
+
     default:
       return card;
   }
 });
 
+  const handleStartExam = async (exam) => {
+    if (!exam?._id) {
+      alert("Assessment ID is missing.");
+      return;
+    }
+
+    if ((exam.questions?.length || 0) === 0) {
+      alert("This assessment has no questions yet.");
+      return;
+    }
+
+    try {
+      await startAssessment(exam._id);
+      const data = await getStudentAssessmentById(exam._id);
+      const assessment = data.assessment;
+      const firstQuestion = assessment?.questions?.[0];
+      setAssessment(assessment);
+setCurrentQuestionIndex(0);
+      
+
+      if (!firstQuestion?._id) {
+        alert("Unable to load questions for this assessment.");
+        return;
+      }
+
+      setEditorQuestion(firstQuestion);
+      setEditorAssessmentId(assessment._id);
+    } catch (err) {
+      alert(getErrorMessage(err, "Failed to start assessment."));
+    }
+  };
+
+  if (!isStudent) {
+    return null;
+  }
+
   // If code editor is open, show it
   if (editorQuestion) {
     return (
-      <CodeEditorPage
-        question={editorQuestion}
-        assessmentId={editorAssessmentId}
-        onBack={() => {
-          setEditorQuestion(null);
-          setEditorAssessmentId(null);
-        }}
-      />
+     <CodeEditorPage
+  question={editorQuestion}
+  assessment={assessment}
+  currentQuestionIndex={currentQuestionIndex}
+  setCurrentQuestionIndex={setCurrentQuestionIndex}
+  setEditorQuestion={setEditorQuestion}
+  assessmentId={editorAssessmentId}
+  onBack={() => {
+    setEditorQuestion(null);
+    setEditorAssessmentId(null);
+    setAssessment(null);
+    setCurrentQuestionIndex(0);
+  }}
+/>
     );
   }
 
@@ -119,15 +215,7 @@ const dashboardStats = studentStats.map((card) => {
         ) : (
           <StudentExams
             exams={exams}
-            onStartExam={(exam) => {
-              // For now, open first question in code editor
-              if (exam.questions?.length > 0) {
-                setEditorQuestion(exam.questions[0]);
-                setEditorAssessmentId(exam._id);
-              } else {
-                alert("This assessment has no questions yet.");
-              }
-            }}
+            onStartExam={handleStartExam}
           />
         );
 
@@ -146,7 +234,7 @@ const dashboardStats = studentStats.map((card) => {
         );
 
       case "leaderboard":
-        return <LeaderboardPanel leaderboard={leaderboard} />;
+        return <LeaderboardPanel leaderboard={leaderboardData} />;
 
       case "settings":
         return <StudentSettings profile={{ ...studentProfile, fullName: user?.fullName || studentProfile.fullName, email: user?.email || studentProfile.email }} />;
@@ -183,14 +271,7 @@ const dashboardStats = studentStats.map((card) => {
               ) : (
                 <StudentExams
                   exams={exams}
-                  onStartExam={(exam) => {
-                    if (exam.questions?.length > 0) {
-                      setEditorQuestion(exam.questions[0]);
-                      setEditorAssessmentId(exam._id);
-                    } else {
-                      alert("This assessment has no questions yet.");
-                    }
-                  }}
+                  onStartExam={handleStartExam}
                 />
               )}
               <StudentNotifications items={notifications} />
