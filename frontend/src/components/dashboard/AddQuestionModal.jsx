@@ -10,7 +10,12 @@ const getErrorMessage = (err, fallback) =>
 
 const DIFFICULTY_OPTIONS = ["Easy", "Medium", "Hard"];
 const LANGUAGE_OPTIONS = ["python", "javascript", "cpp", "java"];
-
+const QUESTION_TYPES = [
+  { value: "coding", label: "Coding" },
+  { value: "mcq", label: "MCQ" },
+  { value: "true_false", label: "True / False" },
+  { value: "subjective", label: "Subjective" },
+];
 const emptyTestCase = () => ({ input: "", output: "" });
 
 export default function AddQuestionModal({
@@ -19,9 +24,24 @@ export default function AddQuestionModal({
   question = null,
   isEdit = false,
 }) {
- const [form, setForm] = useState({
+const [form, setForm] = useState({
   title: question?.title || "",
   description: question?.description || "",
+  questionType: question?.questionType || "coding",
+
+  options:
+  question?.options || [
+    { text: "", isCorrect: false },
+    { text: "", isCorrect: false },
+    { text: "", isCorrect: false },
+    { text: "", isCorrect: false },
+  ],
+
+  answerKey: question?.answerKey || "",
+maxWords: question?.maxWords || 0,
+
+correctAnswer: question?.correctAnswer || "",
+
   difficulty: question?.difficulty || "Easy",
   marks: question?.marks || 10,
   tags: question?.tags?.join(", ") || "",
@@ -31,7 +51,6 @@ export default function AddQuestionModal({
   memoryLimit: question?.memoryLimit || 256,
   status: question?.status || "draft",
 });
-
  const [sampleTestCases, setSampleTestCases] = useState(
   question?.sampleTestCases?.length
     ? question.sampleTestCases
@@ -77,37 +96,75 @@ const [hiddenTestCases, setHiddenTestCases] = useState(
     setError("");
     setSuccess("");
 
-    if (!form.title.trim() || !form.description.trim()) {
-      setError("Title and Description are required.");
-      return;
-    }
-    if (sampleTestCases.some((tc) => !tc.input || !tc.output)) {
-      setError("All sample test cases must have input and output.");
-      return;
-    }
-    if (hiddenTestCases.some((tc) => !tc.input || !tc.output)) {
-      setError("All hidden test cases must have input and output.");
-      return;
-    }
-    if (form.supportedLanguages.length === 0) {
-      setError("Select at least one supported language.");
-      return;
-    }
+   if (form.questionType === "coding") {
+  if (sampleTestCases.some((tc) => !tc.input || !tc.output)) {
+    setError("All sample test cases must have input and output.");
+    return;
+  }
+
+  if (hiddenTestCases.some((tc) => !tc.input || !tc.output)) {
+    setError("All hidden test cases must have input and output.");
+    return;
+  }
+
+  if (form.supportedLanguages.length === 0) {
+    setError("Select at least one supported language.");
+    return;
+  }
+}
+
+if (form.questionType === "mcq") {
+  const filledOptions = form.options.filter(
+    (option) => option.text.trim() !== ""
+  );
+
+  if (filledOptions.length < 2) {
+    setError("Please enter at least two options.");
+    return;
+  }
+
+  const hasCorrectAnswer = form.options.some(
+    (option) => option.isCorrect
+  );
+
+  if (!hasCorrectAnswer) {
+    setError("Please select the correct answer.");
+    return;
+  }
+}
+
+if (form.questionType === "subjective") {
+  if (!form.answerKey.trim()) {
+    setError("Answer Key is required.");
+    return;
+  }
+}
+
+if (form.questionType === "true_false") {
+  if (!form.correctAnswer) {
+    setError("Please select True or False.");
+    return;
+  }
+}
 
     setLoading(true);
     try {
       const payload = {
-        ...form,
-        marks: Number(form.marks),
-        timeLimit: Number(form.timeLimit),
-        memoryLimit: Number(form.memoryLimit),
-        tags: form.tags
-          .split(",")
-          .map((t) => t.trim())
-          .filter(Boolean),
-        sampleTestCases,
-        hiddenTestCases,
-      };
+  ...form,
+  marks: Number(form.marks),
+  timeLimit: Number(form.timeLimit),
+  memoryLimit: Number(form.memoryLimit),
+  tags: form.tags
+    .split(",")
+    .map((t) => t.trim())
+    .filter(Boolean),
+
+  sampleTestCases:
+    form.questionType === "coding" ? sampleTestCases : [],
+
+  hiddenTestCases:
+    form.questionType === "coding" ? hiddenTestCases : [],
+};
     const data = isEdit
   ? await updateQuestion(question._id, payload)
   : await createQuestion(payload);
@@ -135,15 +192,15 @@ const [hiddenTestCases, setHiddenTestCases] = useState(
         {/* Header */}
         <div className="sticky top-0 z-10 flex items-center justify-between border-b border-white/10 bg-zinc-950/95 px-6 py-4 backdrop-blur">
           <div>
-  <h2 className="text-lg font-bold text-white">
-    {isEdit ? "Edit Coding Question" : "Create Coding Question"}
-  </h2>
+ <h2 className="text-lg font-bold text-white">
+  {isEdit ? "Edit Question" : "Add Question"}
+</h2>
 
-  <p className="text-xs text-zinc-400">
-    {isEdit
-      ? "Update the coding question"
-      : "Add a new question to your question bank"}
-  </p>
+ <p className="text-xs text-zinc-400">
+  {isEdit
+    ? "Update your question details."
+    : "Create a new question for your question bank."}
+</p>
 </div>
           <button
             onClick={onClose}
@@ -168,48 +225,79 @@ const [hiddenTestCases, setHiddenTestCases] = useState(
             </div>
           )}
 
-          {/* Title & Difficulty */}
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-1.5">
-              <label className="block text-[11px] font-semibold uppercase tracking-widest text-zinc-400">
-                Title *
-              </label>
-              <input
-                value={form.title}
-                onChange={(e) => handleChange("title", e.target.value)}
-                placeholder="e.g. Two Sum"
-                className="w-full rounded-xl border border-white/10 bg-zinc-900/70 px-4 py-2.5 text-sm text-white placeholder-zinc-600 outline-none focus:border-emerald-500/50 transition"
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <label className="block text-[11px] font-semibold uppercase tracking-widest text-zinc-400">
-                  Difficulty
-                </label>
-                <select
-                  value={form.difficulty}
-                  onChange={(e) => handleChange("difficulty", e.target.value)}
-                  className="w-full rounded-xl border border-white/10 bg-zinc-900/70 px-3 py-2.5 text-sm text-white outline-none focus:border-emerald-500/50 transition"
-                >
-                  {DIFFICULTY_OPTIONS.map((d) => (
-                    <option key={d} value={d}>{d}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="space-y-1.5">
-                <label className="block text-[11px] font-semibold uppercase tracking-widest text-zinc-400">
-                  Marks
-                </label>
-                <input
-                  type="number"
-                  min="1"
-                  value={form.marks}
-                  onChange={(e) => handleChange("marks", e.target.value)}
-                  className="w-full rounded-xl border border-white/10 bg-zinc-900/70 px-4 py-2.5 text-sm text-white outline-none focus:border-emerald-500/50 transition"
-                />
-              </div>
-            </div>
-          </div>
+       {/* Title & Difficulty */}
+<div className="space-y-4">
+
+  {/* Title */}
+  <div className="space-y-1.5">
+    <label className="block text-[11px] font-semibold uppercase tracking-widest text-zinc-400">
+      Title *
+    </label>
+
+    <input
+      value={form.title}
+      onChange={(e) => handleChange("title", e.target.value)}
+      placeholder="e.g. Two Sum"
+      className="w-full rounded-xl border border-white/10 bg-zinc-900/70 px-4 py-2.5 text-sm text-white placeholder-zinc-600 outline-none focus:border-emerald-500/50 transition"
+    />
+  </div>
+
+  {/* Question Type + Difficulty + Marks */}
+  <div className="grid gap-4 md:grid-cols-3">
+
+    <div className="space-y-1.5">
+      <label className="block text-[11px] font-semibold uppercase tracking-widest text-zinc-400">
+        Question Type
+      </label>
+
+      <select
+        value={form.questionType}
+        onChange={(e) => handleChange("questionType", e.target.value)}
+        className="w-full rounded-xl border border-white/10 bg-zinc-900/70 px-3 py-2.5 text-sm text-white outline-none focus:border-emerald-500/50 transition"
+      >
+        {QUESTION_TYPES.map((type) => (
+          <option key={type.value} value={type.value}>
+            {type.label}
+          </option>
+        ))}
+      </select>
+    </div>
+
+    <div className="space-y-1.5">
+      <label className="block text-[11px] font-semibold uppercase tracking-widest text-zinc-400">
+        Difficulty
+      </label>
+
+      <select
+        value={form.difficulty}
+        onChange={(e) => handleChange("difficulty", e.target.value)}
+        className="w-full rounded-xl border border-white/10 bg-zinc-900/70 px-3 py-2.5 text-sm text-white outline-none focus:border-emerald-500/50 transition"
+      >
+        {DIFFICULTY_OPTIONS.map((d) => (
+          <option key={d} value={d}>
+            {d}
+          </option>
+        ))}
+      </select>
+    </div>
+
+    <div className="space-y-1.5">
+      <label className="block text-[11px] font-semibold uppercase tracking-widest text-zinc-400">
+        Marks
+      </label>
+
+      <input
+        type="number"
+        min="1"
+        value={form.marks}
+        onChange={(e) => handleChange("marks", e.target.value)}
+        className="w-full rounded-xl border border-white/10 bg-zinc-900/70 px-4 py-2.5 text-sm text-white outline-none focus:border-emerald-500/50 transition"
+      />
+    </div>
+
+  </div>
+
+</div>
 
           {/* Description */}
           <div className="space-y-1.5">
@@ -225,6 +313,122 @@ const [hiddenTestCases, setHiddenTestCases] = useState(
             />
           </div>
 
+          {form.questionType === "mcq" && (
+  <div className="space-y-6 rounded-2xl border border-white/10 bg-zinc-900/30 p-5">
+
+    <div className="space-y-1.5">
+      <label className="block text-[11px] font-semibold uppercase tracking-widest text-zinc-400">
+        Options
+      </label>
+
+      {[0, 1, 2, 3].map((index) => (
+        <div key={index} className="flex items-center gap-3 mb-3">
+
+         <input
+  type="radio"
+  name="correctAnswer"
+  checked={form.options[index]?.isCorrect}
+  onChange={() => {
+    const updatedOptions = form.options.map((option, i) => ({
+      ...option,
+      isCorrect: i === index,
+    }));
+
+    handleChange("options", updatedOptions);
+  }}
+/>
+
+          <input
+            type="text"
+          value={form.options[index]?.text || ""}
+           onChange={(e) => {
+  const updatedOptions = [...form.options];
+
+  updatedOptions[index] = {
+    ...updatedOptions[index],
+    text: e.target.value,
+  };
+
+  handleChange("options", updatedOptions);
+}}
+            placeholder={`Option ${index + 1}`}
+            className="flex-1 rounded-xl border border-white/10 bg-zinc-900/70 px-4 py-2.5 text-sm text-white"
+          />
+
+        </div>
+      ))}
+    </div>
+
+  </div>
+)}
+
+{form.questionType === "subjective" && (
+  
+  <div className="space-y-5 rounded-2xl border border-white/10 bg-zinc-900/30 p-5">
+
+    <div className="space-y-1.5">
+      <label className="block text-[11px] font-semibold uppercase tracking-widest text-zinc-400">
+        Answer Key
+      </label>
+
+      <textarea
+        value={form.answerKey}
+        onChange={(e) => handleChange("answerKey", e.target.value)}
+        rows={5}
+        placeholder="Enter the expected answer..."
+        className="w-full rounded-xl border border-white/10 bg-zinc-900/70 px-4 py-3 text-sm text-white"
+      />
+    </div>
+
+    <div className="space-y-1.5">
+      <label className="block text-[11px] font-semibold uppercase tracking-widest text-zinc-400">
+        Maximum Words
+      </label>
+
+      <input
+        type="number"
+        min="0"
+        value={form.maxWords}
+        onChange={(e) => handleChange("maxWords", e.target.value)}
+        className="w-full rounded-xl border border-white/10 bg-zinc-900/70 px-4 py-2.5 text-sm text-white"
+      />
+    </div>
+
+  </div>
+)}
+
+{form.questionType === "true_false" && (
+  <div className="space-y-5 rounded-2xl border border-white/10 bg-zinc-900/30 p-5">
+    <label className="block text-[11px] font-semibold uppercase tracking-widest text-zinc-400">
+      Correct Answer
+    </label>
+
+    <div className="flex gap-6">
+      <label className="flex items-center gap-2 text-white">
+        <input
+          type="radio"
+          value="true"
+          checked={form.correctAnswer === "true"}
+          onChange={(e) => handleChange("correctAnswer", e.target.value)}
+        />
+        True
+      </label>
+
+      <label className="flex items-center gap-2 text-white">
+        <input
+          type="radio"
+          value="false"
+          checked={form.correctAnswer === "false"}
+          onChange={(e) => handleChange("correctAnswer", e.target.value)}
+        />
+        False
+      </label>
+    </div>
+  </div>
+)}
+
+{form.questionType === "coding" && (
+  <>
           {/* Constraints & Tags */}
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-1.5">
@@ -413,6 +617,8 @@ const [hiddenTestCases, setHiddenTestCases] = useState(
               </div>
             ))}
           </div>
+        </>
+)}    
 
           {/* Submit */}
           <div className="flex justify-end gap-3 border-t border-white/10 pt-4">

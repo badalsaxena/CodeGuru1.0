@@ -16,7 +16,7 @@ const QuestionBank = ({
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <p className="text-sm uppercase tracking-[0.3em] text-emerald-400">Question Bank</p>
-          <h2 className="mt-1 text-xl font-semibold text-white">Manage coding questions</h2>
+          <h2 className="mt-1 text-xl font-semibold text-white">Manage questions</h2>
         </div>
 
         <div className="flex flex-col gap-3 sm:flex-row">
@@ -39,7 +39,7 @@ const QuestionBank = ({
           </label>
           <button onClick={onAddQuestion} className="flex items-center justify-center gap-2 rounded-2xl bg-emerald-500 px-4 py-2 font-medium text-black transition hover:bg-emerald-400">
             <Plus className="h-4 w-4" />
-            Add Coding Question
+            Add  Question
           </button>
         </div>
       </div>
@@ -49,7 +49,7 @@ const QuestionBank = ({
           <div className="flex flex-col items-center justify-center rounded-2xl border border-white/8 bg-zinc-900/40 py-16 text-center">
             <BookOpen className="mb-3 h-10 w-10 text-zinc-600" />
             <p className="font-semibold text-white">No questions found</p>
-            <p className="mt-1 text-xs text-zinc-500">Click "Add Coding Question" to create your first one.</p>
+            <p className="mt-1 text-xs text-zinc-500">Click "Add Question" to create your first one.</p>
           </div>
         )}
         {questions.map((question) => (
