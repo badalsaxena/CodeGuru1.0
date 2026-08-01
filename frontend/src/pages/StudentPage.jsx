@@ -8,7 +8,7 @@ import LeaderboardPanel from "@/components/dashboard/LeaderboardPanel";
 import ProgressCharts from "@/components/dashboard/ProgressCharts";
 import StudentSettings from "@/components/dashboard/StudentSettings";
 import StudentNotifications from "@/components/dashboard/StudentNotifications";
-import CodeEditorPage from "@/pages/CodeEditorPage";
+import AssessmentSession from "@/components/assessment/AssessmentSession";
 import { getStudentAssessments, startAssessment, getStudentAssessmentById } from "@/services/studentService";
 import { getQuestions } from "@/services/questionService";
 import { getLeaderboard } from "@/services/leaderboardService";
@@ -185,23 +185,22 @@ setCurrentQuestionIndex(0);
     return null;
   }
 
-  // If code editor is open, show it
+  // If assessment is active, launch AssessmentSession (supports all question types)
   if (editorQuestion) {
     return (
-     <CodeEditorPage
-  question={editorQuestion}
-  assessment={assessment}
-  currentQuestionIndex={currentQuestionIndex}
-  setCurrentQuestionIndex={setCurrentQuestionIndex}
-  setEditorQuestion={setEditorQuestion}
-  assessmentId={editorAssessmentId}
-  onBack={() => {
-    setEditorQuestion(null);
-    setEditorAssessmentId(null);
-    setAssessment(null);
-    setCurrentQuestionIndex(0);
-  }}
-/>
+      <AssessmentSession
+        assessment={assessment}
+        currentQuestionIndex={currentQuestionIndex}
+        setCurrentQuestionIndex={setCurrentQuestionIndex}
+        setEditorQuestion={setEditorQuestion}
+        assessmentId={editorAssessmentId}
+        onBack={() => {
+          setEditorQuestion(null);
+          setEditorAssessmentId(null);
+          setAssessment(null);
+          setCurrentQuestionIndex(0);
+        }}
+      />
     );
   }
 

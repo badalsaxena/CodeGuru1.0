@@ -12,21 +12,21 @@ const executeCode = async (req, res) => {
       stdin,
     } = req.body;
 
-    // Support both code & sourceCode
-    const finalCode = code || sourceCode;
-
-    // Support both input & stdin
-    const finalInput = input || stdin || "";
+    // Support both field name variants from different callers
+    const finalCode  = code  || sourceCode || "";
+    const finalInput = input || stdin      || "";
 
     if (!language || !finalCode) {
       return res.status(400).json({
         success: false,
-        message: "Language and Code are required",
+        message: "language and code are required",
       });
     }
 
     const result = await runCode(language, finalCode, finalInput);
 
+    // Response shape: { success, result }
+    // Frontend reads: result.run.stdout / result.run.stderr / result.compile.stdout
     return res.status(200).json({
       success: true,
       result,
@@ -42,6 +42,4 @@ const executeCode = async (req, res) => {
   }
 };
 
-module.exports = {
-  executeCode,
-};
+module.exports = { executeCode };
