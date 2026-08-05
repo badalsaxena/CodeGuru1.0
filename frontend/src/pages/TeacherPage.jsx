@@ -428,11 +428,8 @@ const handleDeleteAssessment = async (id) => {
           </div>
         );
 
-      case "reports":
-        return <Reports series={performanceSeries} breakdown={performanceBreakdown} />;
-
       case "settings":
-        return <SettingsPanel profile={teacherProfile} />;
+        return <SettingsPanel profile={{ ...teacherProfile, fullName: user?.fullName || teacherProfile.fullName, email: user?.email || teacherProfile.email }} />;
 
       case "dashboard":
       default:
@@ -468,25 +465,13 @@ const handleDeleteAssessment = async (id) => {
 
             <DashboardCards stats={stats} />
 
-            <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
-              {questionsLoading ? (
-                <div className="flex items-center justify-center rounded-3xl border border-white/10 bg-zinc-950/70 py-16">
-                  <Loader2 className="h-8 w-8 animate-spin text-emerald-400" />
-                </div>
-              ) : (
-               <QuestionBank
-  questions={filteredQuestions}
-  onDelete={handleDeleteQuestion}
-  onEdit={handleEditQuestion}
-  onPublish={handlePublishQuestion}
-  onAddQuestion={() => setShowAddQuestion(true)}
-  searchTerm={searchTerm}
-  onSearchChange={setSearchTerm}
-  difficultyFilter={difficultyFilter}
-  onDifficultyChange={setDifficultyFilter}
-/>
-              )}
-              <AlertPanel alerts={aiAlerts} />
+            {/* ── Analytics ──────────────────────────────────── */}
+            <div>
+              <div className="mb-4">
+                <p className="text-sm uppercase tracking-[0.3em] text-emerald-400">Analytics</p>
+                <h2 className="mt-1 text-xl font-semibold text-white">Performance & Reports</h2>
+              </div>
+              <Reports series={performanceSeries} breakdown={performanceBreakdown} />
             </div>
           </div>
         );
@@ -499,10 +484,8 @@ const handleDeleteAssessment = async (id) => {
         <Sidebar
           activeSection={activeSection}
           onSectionChange={setActiveSection}
-          navItems={[
-            ...navItems,
-            { id: "assessments", label: "Assessments", icon: "ClipboardList" },
-          ]}
+          navItems={navItems}
+          portalLabel="Teacher Portal"
         />
 
         <main className="flex-1 space-y-6">
@@ -510,6 +493,8 @@ const handleDeleteAssessment = async (id) => {
             <Header
               title="Teacher Dashboard"
               subtitle={`Logged in as ${user?.email || "teacher"}`}
+              user={user}
+              workspace="Teacher Workspace"
             />
             <button
               onClick={handleLogout}

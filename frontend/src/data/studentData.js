@@ -70,5 +70,5 @@ export const studentNavItems = [
   { id: "exams", label: "My Exams", icon: "BookOpenCheck" },
   { id: "practice", label: "Practice Problems", icon: "Code2" },
   { id: "leaderboard", label: "Leaderboard", icon: "Trophy" },
-  { id: "settings", label: "Settings", icon: "Settings" },
+  { id: "settings", label: "Profile", icon: "UserCircle" },
 ];

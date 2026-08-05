@@ -262,20 +262,6 @@ setCurrentQuestionIndex(0);
 
           <StudentDashboardCards stats={dashboardStats} />
 
-            <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
-              {examsLoading ? (
-                <div className="flex items-center justify-center rounded-3xl border border-white/10 bg-zinc-950/70 py-16">
-                  <Loader2 className="h-8 w-8 animate-spin text-emerald-400" />
-                </div>
-              ) : (
-                <StudentExams
-                  exams={exams}
-                  onStartExam={handleStartExam}
-                />
-              )}
-              <StudentNotifications items={notifications} />
-            </div>
-
             <ProgressCharts series={progressSeries} topicPerformance={topicPerformance} breakdown={[]} />
           </div>
         );
@@ -291,6 +277,8 @@ setCurrentQuestionIndex(0);
             <Header
               title="Student Dashboard"
               subtitle={`Logged in as ${user?.email || "student"}`}
+              user={user}
+              notifications={notifications}
             />
             <button
               onClick={handleLogout}

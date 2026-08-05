@@ -1,4 +1,4 @@
-import { ArrowLeft, Clock } from "lucide-react";
+import { ArrowLeft, Clock, LogOut } from "lucide-react";
 import CameraPlaceholder from "./CameraPlaceholder";
 import WarningBanner from "./WarningBanner";
 
@@ -48,6 +48,8 @@ export default function AssessmentLayout({
   question,
   onBack,
   onQuestionChange,
+  onFinish,
+  answeredCount,
   children,
 }) {
   // ── derived values ───────────────────────────────────────────
