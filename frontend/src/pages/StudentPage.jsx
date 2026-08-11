@@ -8,7 +8,7 @@ import LeaderboardPanel from "@/components/dashboard/LeaderboardPanel";
 import ProgressCharts from "@/components/dashboard/ProgressCharts";
 import StudentSettings from "@/components/dashboard/StudentSettings";
 import StudentNotifications from "@/components/dashboard/StudentNotifications";
-import CodeEditorPage from "@/pages/CodeEditorPage";
+import AssessmentSession from "@/components/assessment/AssessmentSession";
 import { getStudentAssessments, startAssessment, getStudentAssessmentById } from "@/services/studentService";
 import { getQuestions } from "@/services/questionService";
 import { getLeaderboard } from "@/services/leaderboardService";
@@ -185,23 +185,22 @@ setCurrentQuestionIndex(0);
     return null;
   }
 
-  // If code editor is open, show it
+  // If assessment is active, launch AssessmentSession (supports all question types)
   if (editorQuestion) {
     return (
-     <CodeEditorPage
-  question={editorQuestion}
-  assessment={assessment}
-  currentQuestionIndex={currentQuestionIndex}
-  setCurrentQuestionIndex={setCurrentQuestionIndex}
-  setEditorQuestion={setEditorQuestion}
-  assessmentId={editorAssessmentId}
-  onBack={() => {
-    setEditorQuestion(null);
-    setEditorAssessmentId(null);
-    setAssessment(null);
-    setCurrentQuestionIndex(0);
-  }}
-/>
+      <AssessmentSession
+        assessment={assessment}
+        currentQuestionIndex={currentQuestionIndex}
+        setCurrentQuestionIndex={setCurrentQuestionIndex}
+        setEditorQuestion={setEditorQuestion}
+        assessmentId={editorAssessmentId}
+        onBack={() => {
+          setEditorQuestion(null);
+          setEditorAssessmentId(null);
+          setAssessment(null);
+          setCurrentQuestionIndex(0);
+        }}
+      />
     );
   }
 
@@ -263,20 +262,6 @@ setCurrentQuestionIndex(0);
 
           <StudentDashboardCards stats={dashboardStats} />
 
-            <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
-              {examsLoading ? (
-                <div className="flex items-center justify-center rounded-3xl border border-white/10 bg-zinc-950/70 py-16">
-                  <Loader2 className="h-8 w-8 animate-spin text-emerald-400" />
-                </div>
-              ) : (
-                <StudentExams
-                  exams={exams}
-                  onStartExam={handleStartExam}
-                />
-              )}
-              <StudentNotifications items={notifications} />
-            </div>
-
             <ProgressCharts series={progressSeries} topicPerformance={topicPerformance} breakdown={[]} />
           </div>
         );
@@ -292,6 +277,8 @@ setCurrentQuestionIndex(0);
             <Header
               title="Student Dashboard"
               subtitle={`Logged in as ${user?.email || "student"}`}
+              user={user}
+              notifications={notifications}
             />
             <button
               onClick={handleLogout}

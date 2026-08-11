@@ -23,22 +23,36 @@ const submissionSchema = new mongoose.Schema(
       required: true,
     },
 
-    // Programming Language
-    language: {
-  type: String,
-  enum: [
-    "javascript",
-    "python",
-    "java",
-    "c++",
-  ],
-  required: true,
-},
+    // Question type at time of submission (snapshot)
+    questionType: {
+      type: String,
+      enum: ["coding", "mcq", "subjective", "true_false"],
+      default: "coding",
+    },
 
-    // Student Code
+    // Programming Language — only required for coding questions
+    language: {
+      type: String,
+      enum: ["javascript", "python", "java", "c++", ""],
+      default: "",
+    },
+
+    // Student Code — only for coding questions
     code: {
       type: String,
-      required: true,
+      default: "",
+    },
+
+    // Student Answer — for MCQ, subjective, true_false
+    answer: {
+      type: String,
+      default: "",
+    },
+
+    // Selected option index — for MCQ display purposes
+    selectedIndex: {
+      type: Number,
+      default: null,
     },
 
     // Submission Status

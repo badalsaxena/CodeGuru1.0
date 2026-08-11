@@ -174,9 +174,9 @@ export const teacherProfile = {
 };
 
 export const navItems = [
-  { id: "dashboard", label: "Dashboard", icon: "LayoutGrid" },
-  { id: "questions", label: "Coding Questions", icon: "Code2" },
+  { id: "dashboard",  label: "Dashboard",    icon: "LayoutGrid"  },
+  { id: "questions",  label: "Question Bank", icon: "Code2"       },
+  { id: "assessments", label: "Assessments", icon: "ClipboardList" },
   { id: "monitoring", label: "Live Monitoring", icon: "MonitorPlay" },
-  { id: "reports", label: "Reports", icon: "BarChart3" },
-  { id: "settings", label: "Settings", icon: "Settings" },
+  { id: "settings",   label: "Profile",      icon: "UserCircle"  },
 ];

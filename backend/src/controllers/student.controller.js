@@ -43,7 +43,9 @@ const getStudentAssessmentById = async (req, res) => {
       .populate({
         path: "questions",
         select:
-          "title description difficulty marks tags sampleTestCases supportedLanguages boilerplate timeLimit memoryLimit",
+          "title description difficulty marks tags constraints questionType " +
+          "sampleTestCases supportedLanguages boilerplate timeLimit memoryLimit " +
+          "options answerKey maxWords correctAnswer",
       });
 
     if (!assessment) {

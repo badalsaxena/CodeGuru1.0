@@ -1,4 +1,4 @@
-import { LayoutGrid, BookOpenCheck, Code2, MonitorPlay, BarChart3, Settings, Sparkles, Trophy, ClipboardList } from "lucide-react";
+import { LayoutGrid, BookOpenCheck, Code2, MonitorPlay, BarChart3, Settings, Sparkles, Trophy, ClipboardList, UserCircle } from "lucide-react";
 
 const iconMap = {
   LayoutGrid,
@@ -9,9 +9,10 @@ const iconMap = {
   Settings,
   Trophy,
   ClipboardList,
+  UserCircle,
 };
 
-const Sidebar = ({ activeSection, onSectionChange, navItems }) => {
+const Sidebar = ({ activeSection, onSectionChange, navItems, portalLabel = "Student Portal" }) => {
   return (
     <aside className="w-full rounded-3xl border border-white/10 bg-zinc-950/70 p-4 shadow-2xl shadow-black/30 backdrop-blur-xl lg:w-72 lg:sticky lg:top-6 lg:h-[calc(100vh-3rem)]">
       <div className="flex items-center gap-3 border-b border-white/10 pb-5">
@@ -20,7 +21,7 @@ const Sidebar = ({ activeSection, onSectionChange, navItems }) => {
         </div>
         <div>
           <p className="text-sm font-semibold text-white">CodeGuru</p>
-          <p className="text-sm text-zinc-400">Teacher Console</p>
+          <p className="text-sm text-zinc-400">{portalLabel}</p>
         </div>
       </div>
 
@@ -49,10 +50,6 @@ const Sidebar = ({ activeSection, onSectionChange, navItems }) => {
         })}
       </nav>
 
-      <div className="mt-8 rounded-2xl border border-emerald-400/20 bg-emerald-500/10 p-4 text-sm text-zinc-300">
-        <p className="font-semibold text-white">Pro Mode Ready</p>
-        <p className="mt-1 text-zinc-400">Your dashboard is prepared for API-driven data swaps later.</p>
-      </div>
     </aside>
   );
 };

@@ -3,8 +3,8 @@ const SettingsPanel = ({ profile }) => {
     <div className="rounded-3xl border border-white/10 bg-zinc-950/70 p-6 shadow-2xl shadow-black/20 backdrop-blur-xl">
       <div className="flex flex-col gap-6 lg:flex-row">
         <div className="lg:w-1/3">
-          <p className="text-sm uppercase tracking-[0.3em] text-emerald-400">Profile Settings</p>
-          <h2 className="mt-2 text-2xl font-semibold text-white">Edit your frontend profile details</h2>
+          <p className="text-sm uppercase tracking-[0.3em] text-emerald-400">Teacher Profile</p>
+          <h2 className="mt-2 text-2xl font-semibold text-white">Your teacher profile</h2>
           <p className="mt-3 text-sm text-zinc-400">This panel is intentionally UI-only and ready for later API integration.</p>
           <div className="mt-6 flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-emerald-400 to-cyan-400 text-3xl font-semibold text-black">
             {profile.fullName.split(" ").map((word) => word[0]).join("")}
