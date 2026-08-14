@@ -15,6 +15,8 @@ import {
   UserX,
   RefreshCw,
 } from "lucide-react";
+import UserTable from "@/components/admin/UserTable";
+import ConfirmModal from "@/components/admin/ConfirmModal";
 import {
   approvalRequests,
   profileSettings,
@@ -123,6 +125,38 @@ const AdminPage = () => {
 
   const content = useMemo(() => {
     switch (activeSection) {
+      case "students": {
+        const students = users.filter((u) => u.role === "student");
+        return (
+          <section>
+            <UserTable
+              title="Students"
+              users={students.map((s) => ({ ...s, status: s.isRestricted ? "Restricted" : "Active" }))}
+              onView={(u) => alert(`View student: ${u.fullName || u.name}`)}
+              onRestrictToggle={(u, restrict) => {
+                // UI-only state toggle
+                setUsers((prev) => prev.map((p) => (p._id === u._id ? { ...p, isRestricted: restrict } : p)));
+              }}
+            />
+          </section>
+        );
+      }
+
+      case "teachers": {
+        const teachers = users.filter((u) => u.role === "teacher");
+        return (
+          <section>
+            <UserTable
+              title="Teachers"
+              users={teachers.map((s) => ({ ...s, status: s.isRestricted ? "Restricted" : "Active" }))}
+              onView={(u) => alert(`View teacher: ${u.fullName || u.name}`)}
+              onRestrictToggle={(u, restrict) => {
+                setUsers((prev) => prev.map((p) => (p._id === u._id ? { ...p, isRestricted: restrict } : p)));
+              }}
+            />
+          </section>
+        );
+      }
       case "approvals":
         return (
           <section className="space-y-4">

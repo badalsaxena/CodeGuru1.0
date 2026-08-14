@@ -25,6 +25,8 @@ export const sidebarItems = [
   { id: "dashboard", label: "Dashboard", icon: LayoutGrid },
   { id: "approvals", label: "User Approval", icon: CheckCircle2 },
   { id: "management", label: "User Management", icon: Users2 },
+  { id: "students", label: "Students", icon: Users },
+  { id: "teachers", label: "Teachers", icon: GraduationCap },
   { id: "analytics", label: "Analytics", icon: ChartColumnBig },
   { id: "tests", label: "Test Management", icon: ClipboardCheck },
   { id: "settings", label: "Settings", icon: SettingsIcon },
