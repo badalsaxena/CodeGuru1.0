@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { loginUser, registerUser } from "../services/authService";
+import { loginUser, registerUser } from "../services/authservice";
 import {
   Eye, EyeOff, ArrowLeft, Check, Mail, Lock, User,
   Shield, GraduationCap, BookOpen, AlertCircle,

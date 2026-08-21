@@ -1,6 +1,6 @@
 import React from "react";
 import { Sparkles, Code2, Users, Cpu, ShieldAlert } from "lucide-react";
-import TextPressure from "../textpressure";
+import TextPressure from "../TextPressure";
 
 export default function DemoSections() {
   return (
@@ -9,7 +9,7 @@ export default function DemoSections() {
       {/* 1. FEATURES SECTION */}
       <section id="features" className="relative min-h-[60vh] py-20 flex flex-col justify-center border-t border-white/5 bg-zinc-950/20">
         <div className="max-w-5xl mx-auto px-6 w-full">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-emerald-500/20 bg-emerald-500/5 text-emerald-400 text-xs font-semibold mb-4">
+    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-emerald-500/20 bg-emerald-500/5 text-emerald-400 text-xs font-semibold mb-4">
             <Sparkles className="w-3.5 h-3.5" />
             <span>AI Powered Capabilities</span>
           </div>
