@@ -1,71 +1,82 @@
 class TalkingDetector {
   constructor() {
-  this.transitions = 0;
-  this.lastState = "CLOSED";
-  this.startTime = Date.now();
+    this.openCount = 0;
+    this.closedCount = 0;
 
-  this.isTalking = false;
-  this.silentWindows = 0;
-}
+    this.lastState = "CLOSED";
+    this.transitionCount = 0;
+
+    this.startTime = Date.now();
+  }
 
   analyze(mouthState) {
-  const now = Date.now();
+    const now = Date.now();
 
-  // Count OPEN ↔ CLOSED transitions
-  if (mouthState !== this.lastState) {
-    this.transitions++;
-    this.lastState = mouthState;
-  }
-
-  // Every 2 seconds
-  if (now - this.startTime >= 2000) {
-
-    let talking = false;
-
-    // Start talking only once
-    if (this.transitions >= 4) {
-
-      this.silentWindows = 0;
-
-      if (!this.isTalking) {
-        this.isTalking = true;
-        talking = true;
-      }
-
-    } else {
-
-      this.silentWindows++;
-
-      // Stop talking after 2 silent windows (≈4 sec)
-      if (this.silentWindows >= 2) {
-        this.isTalking = false;
-      }
-
+    if (!mouthState) {
+      return null;
     }
 
-    const result = {
-      talking,
-      transitions: this.transitions,
-    };
+    // Count OPEN/CLOSED states
+    if (mouthState === "OPEN") {
+      this.openCount++;
+    }
 
-    // Reset for next window
-    this.transitions = 0;
-    this.startTime = now;
+    if (mouthState === "CLOSED") {
+      this.closedCount++;
+    }
 
-    return result;
+    // Detect mouth state transition
+    if (
+      mouthState !== this.lastState &&
+      (mouthState === "OPEN" || mouthState === "CLOSED")
+    ) {
+      this.transitionCount++;
+      this.lastState = mouthState;
+    }
+
+    // Analyze every 2 seconds
+    if (now - this.startTime >= 2000) {
+
+      /*
+       * Talking requires repeated mouth movement.
+       *
+       * Example:
+       * CLOSED → OPEN → CLOSED → OPEN → CLOSED
+       *
+       * This creates multiple transitions.
+       */
+
+      const talking =
+        this.transitionCount >= 4 &&
+        this.openCount >= 3 &&
+        this.closedCount >= 3;
+
+      const result = {
+        talking,
+        openCount: this.openCount,
+        closedCount: this.closedCount,
+        transitions: this.transitionCount,
+      };
+
+      // Reset window
+      this.openCount = 0;
+      this.closedCount = 0;
+      this.transitionCount = 0;
+      this.startTime = now;
+
+      return result;
+    }
+
+    return null;
   }
 
-  return null;
-}
-
   reset() {
-  this.transitions = 0;
-  this.lastState = "CLOSED";
-  this.startTime = Date.now();
-
-  this.isTalking = false;
-  this.silentWindows = 0;
-}
+    this.openCount = 0;
+    this.closedCount = 0;
+    this.lastState = "CLOSED";
+    this.transitionCount = 0;
+    this.startTime = Date.now();
+  }
 }
 
 const talkingDetector = new TalkingDetector();

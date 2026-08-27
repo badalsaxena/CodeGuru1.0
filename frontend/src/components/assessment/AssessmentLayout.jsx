@@ -1,6 +1,8 @@
+import { useEffect, useState } from "react";
 import { ArrowLeft, Clock, LogOut } from "lucide-react";
 import CameraPlaceholder from "./CameraPlaceholder";
 import WarningBanner from "./WarningBanner";
+import AIProctor from "../screening/AIProctor";
 
 /**
  * AssessmentLayout
@@ -51,7 +53,51 @@ export default function AssessmentLayout({
   onFinish,
   answeredCount,
   children,
+  startTime,
 }) {
+
+   const [remainingSeconds, setRemainingSeconds] = useState(() => {
+  if (!startTime) {
+    return (assessment?.duration || 60) * 60;
+  }
+
+  const durationSeconds = (assessment?.duration || 60) * 60;
+  const elapsedSeconds = Math.floor(
+    (Date.now() - new Date(startTime).getTime()) / 1000
+  );
+
+  return Math.max(0, durationSeconds - elapsedSeconds);
+});
+
+    useEffect(() => {
+  if (!startTime) return;
+
+  const updateRemainingTime = () => {
+    const durationSeconds = (assessment?.duration || 60) * 60;
+
+    const elapsedSeconds = Math.floor(
+      (Date.now() - new Date(startTime).getTime()) / 1000
+    );
+
+    const remaining = Math.max(
+      0,
+      durationSeconds - elapsedSeconds
+    );
+
+    setRemainingSeconds(remaining);
+
+    if (remaining <= 0) {
+      onFinish?.();
+    }
+  };
+
+  updateRemainingTime();
+
+  const timer = setInterval(updateRemainingTime, 1000);
+
+  return () => clearInterval(timer);
+}, [startTime, assessment?.duration, onFinish]);
+
   // ── derived values ───────────────────────────────────────────
   const questions     = assessment?.questions || [];
   const totalQuestions = questions.length || 1;
@@ -59,7 +105,13 @@ export default function AssessmentLayout({
   const progress       = Math.round((currentNumber / totalQuestions) * 100);
 
   // Timer: stub until backend provides remaining time
-  const remainingTime = "--:--:--";
+  const hours = Math.floor(remainingSeconds / 3600);
+const minutes = Math.floor((remainingSeconds % 3600) / 60);
+const seconds = remainingSeconds % 60;
+
+const remainingTime = `${String(hours).padStart(2, "0")}:${String(
+  minutes
+).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
 
   // Warning placeholder: always false until monitoring is implemented
   const warningCount = 0;
@@ -142,7 +194,7 @@ export default function AssessmentLayout({
           </div>
 
           {/* Camera placeholder — top right */}
-          <CameraPlaceholder />
+          <AIProctor />
         </div>
       </header>
 

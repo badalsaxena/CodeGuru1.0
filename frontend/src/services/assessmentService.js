@@ -47,3 +47,4 @@ export const unpublishAssessment = async (id) => {
   const res = await API.patch(`/assessments/${id}/unpublish`);
   return res.data;
 };
+

@@ -1,5 +1,7 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { LogOut, Loader2 } from "lucide-react";
+import eventManager from "../../ai/eventManager";
+import monitoringState from "../../ai/monitoringState";
 import AssessmentLayout from "./AssessmentLayout";
 import QuestionRenderer from "./QuestionRenderer";
 
@@ -27,9 +29,45 @@ export default function AssessmentSession({
   currentQuestionIndex,
   setCurrentQuestionIndex,
   setEditorQuestion,
-  assessmentId,
-  onBack,
+    assessmentId, 
+  attemptId, 
+  startTime,
+  onBack, 
 }) {
+
+  const [examBlocked, setExamBlocked] = useState(
+  monitoringState.get().blocked
+);
+
+  useEffect(() => {
+    const unsubscribe = monitoringState.subscribe((state) => {
+      setExamBlocked(state.blocked);
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, []);
+
+  useEffect(() => {
+  if (!examBlocked) return;
+
+  const timer = setTimeout(() => {
+    onBack();
+  }, 3000);
+
+  return () => clearTimeout(timer);
+}, [examBlocked, onBack]);
+
+  useEffect(() => {
+  if (attemptId) {
+    eventManager.setAttemptId(attemptId);
+  }
+
+  return () => {
+    eventManager.reset();
+  };
+}, [attemptId]);
   const questions      = assessment?.questions || [];
   const totalQuestions = questions.length;
   const question       = questions[currentQuestionIndex] || null;
@@ -81,6 +119,43 @@ export default function AssessmentSession({
 
   return (
     <>
+    {/* ── Exam Blocked modal ───────────────────────────────────────────────*/}
+    {examBlocked && (
+  <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 backdrop-blur-md">
+    <div className="w-full max-w-md rounded-3xl border border-red-500/30 bg-zinc-900 p-8 text-center shadow-2xl">
+      
+      <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-red-500/10">
+        <span className="text-3xl">🚫</span>
+      </div>
+
+      <h2 className="text-2xl font-bold text-red-400">
+        Assessment Blocked
+      </h2>
+
+      <p className="mt-3 text-sm leading-6 text-zinc-400">
+        Your assessment has been automatically blocked because
+        the maximum warning limit has been reached.
+      </p>
+
+      <div className="mt-6 rounded-xl border border-red-500/20 bg-red-500/5 p-4">
+        <p className="text-sm text-red-300">
+          Maximum warnings reached
+        </p>
+        <p className="mt-1 text-xs text-zinc-500">
+          You can no longer continue this assessment.
+        </p>
+      </div>
+
+      <button
+        onClick={onBack}
+        className="mt-6 w-full rounded-xl bg-red-500 py-3 text-sm font-bold text-white transition hover:bg-red-400"
+      >
+        Exit Assessment
+      </button>
+
+    </div>
+  </div>
+)}
       {/* ── Submit Assessment confirmation modal ───────────────── */}
       {showConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
@@ -126,9 +201,10 @@ export default function AssessmentSession({
       )}
 
       {/* ── Main layout ────────────────────────────────────────── */}
-      <AssessmentLayout
-        assessment={assessment}
-        currentQuestionIndex={currentQuestionIndex}
+      <AssessmentLayout 
+      assessment={assessment}
+      startTime={startTime}
+      currentQuestionIndex={currentQuestionIndex}
         question={question}
         onBack={onBack}
         onQuestionChange={handleQuestionChange}

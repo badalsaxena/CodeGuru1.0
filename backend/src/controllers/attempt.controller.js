@@ -7,6 +7,7 @@ const startAttempt = async (req, res) => {
   try {
     const { assessmentId } = req.body;
 
+    // Validate Assessment ID
     if (!assessmentId) {
       return res.status(400).json({
         success: false,
@@ -24,7 +25,33 @@ const startAttempt = async (req, res) => {
       });
     }
 
-    // Prevent multiple active attempts
+    // =====================================================
+    // 🚫 CHECK BLOCKED ATTEMPT
+    // =====================================================
+
+    const blockedAttempt = await Attempt.findOne({
+      student: req.user.id,
+      assessment: assessmentId,
+      isBlocked: true,
+    });
+
+    console.log("========== BLOCK CHECK ==========");
+    console.log("Student:", req.user.id);
+    console.log("Assessment:", assessmentId);
+    console.log("Blocked Attempt Found:", blockedAttempt);
+    console.log("=================================");
+
+    if (blockedAttempt) {
+      return res.status(403).json({
+        success: false,
+        message: "You cannot retake an assessment that was blocked.",
+      });
+    }
+
+    // =====================================================
+    // CHECK ACTIVE ATTEMPT
+    // =====================================================
+
     const existingAttempt = await Attempt.findOne({
       student: req.user.id,
       assessment: assessmentId,
@@ -34,18 +61,22 @@ const startAttempt = async (req, res) => {
     if (existingAttempt) {
       return res.status(400).json({
         success: false,
-        message: "You already have an active attempt for this assessment",
+        message:
+          "You already have an active attempt for this assessment",
       });
     }
 
-    // Create Attempt
+    // =====================================================
+    // CREATE NEW ATTEMPT
+    // =====================================================
+
     const attempt = await Attempt.create({
       student: req.user.id,
       assessment: assessmentId,
       totalQuestions: assessment.questions.length,
     });
 
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       message: "Assessment Attempt Started",
       attempt,
@@ -54,7 +85,7 @@ const startAttempt = async (req, res) => {
   } catch (error) {
     console.error("❌ Start Attempt Error:", error);
 
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: "Internal Server Error",
     });

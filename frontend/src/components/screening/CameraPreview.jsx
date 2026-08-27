@@ -6,13 +6,13 @@ export default function CameraPreview() {
   useScreening(videoRef);
 
   return (
-    <div className="rounded-xl overflow-hidden border border-zinc-700 bg-black">
+    <div className="absolute inset-0 overflow-hidden bg-black">
       <video
         ref={videoRef}
         autoPlay
         playsInline
         muted
-        className="w-full h-full object-cover"
+        className="absolute inset-0 w-full h-full object-cover"
       />
     </div>
   );

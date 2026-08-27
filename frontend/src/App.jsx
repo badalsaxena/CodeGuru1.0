@@ -33,25 +33,18 @@ const App = () => {
   if (view === "teacher") {
   return (
     <div className="relative min-h-screen bg-zinc-950">
-
-      <div className="fixed top-4 right-4 z-[9999] w-64 h-48 border-2 border-red-500">
-        <CameraPreview />
-      </div>
-
       <TeacherPage />
     </div>
   );
 }
 
   if (view === "student") {
-    return (
-      <div className="relative min-h-screen bg-zinc-950">
-        <CameraPreview />
-
-        <StudentPage />
-      </div>
-    );
-  }
+  return (
+    <div className="relative min-h-screen bg-zinc-950">
+      <StudentPage />
+    </div>
+  );
+}
 
   if (view === "admin") {
     return (

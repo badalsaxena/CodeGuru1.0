@@ -9,19 +9,27 @@ import blinkDetector from "../ai/blinkDetector";
 import mouthDetector from "../ai/mouthDetector";
 import talkingDetector from "../ai/talkingDetector";
 import yoloDetector from "../ai/yoloDetector";
+import browserMonitor from "../ai/browserMonitor";
+import monitoringState from "../ai/monitoringState";
+
+
+
 
 export default function useScreening(videoRef) {
   useEffect(() => {
-    let intervalId;
-    let lastYoloTime = 0;
+  let intervalId;
+  let lastYoloTime = 0;
 
-    async function startScreening() {
-      try {
+  monitoringState.reset();
+
+  async function startScreening() {   
+       try {
         // Load MediaPipe models
         await faceDetector.initialize();
         await faceLandmarker.initialize();
         await yoloDetector.initialize();
-    
+
+        browserMonitor.initialize(); // 👈 Add this
 
         console.log("✅ Screening Started");
 
@@ -38,23 +46,18 @@ const screeningResult = screeningEngine.analyze(result.faceCount);
 // Print face status
 if (screeningResult.changed) {
   switch (screeningResult.status) {
-    case "NO_FACE":
-      eventManager.emit({
-  type: "NO_FACE",
-  severity: 5,
-    });
-      break;
 
-    case "SINGLE_FACE":
-      console.log("✅ Single Face Detected");
-      break;
+    
+    
+case "SINGLE_FACE":
+  monitoringState.set({
+    face: "Detected",
+  });
 
-    case "MULTIPLE_FACE":
-      eventManager.emit({
-  type: "MULTIPLE_FACE",
-  severity: 10,
-});
-      break;
+  console.log("✅ Single Face Detected");
+  break;
+
+
   }
 }
 
@@ -67,6 +70,11 @@ if (result.faceCount === 1) {
   );
 
  if (poseResult.changed) {
+
+  monitoringState.set({
+    head: poseResult.direction,
+  });
+
   eventManager.emit({
     type: "HEAD_DIRECTION",
     direction: poseResult.direction,
@@ -81,6 +89,11 @@ if (result.faceCount === 1) {
 
 // Eye
 if (eyeResult.changed) {
+
+  monitoringState.set({
+    eye: eyeResult.direction,
+  });
+
   eventManager.emit({
     type: "EYE_DIRECTION",
     direction: eyeResult.direction,
@@ -131,12 +144,21 @@ if (mouthResult.changed) {
 }
 
 // Talking event
-if (talkingResult?.talking) {
-  eventManager.emit({
-    type: "TALKING",
-    transitions: talkingResult.transitions,
-    severity: 3,
+if (talkingResult) {
+
+  monitoringState.set({
+    talking: talkingResult.talking,
   });
+
+  if (talkingResult.talking) {
+    eventManager.emit({
+      type: "TALKING",
+      openCount: talkingResult.openCount,
+      closedCount: talkingResult.closedCount,
+      severity: 3,
+    });
+  }
+
 }
 
 // ----------------------
@@ -151,24 +173,55 @@ if (now - lastYoloTime > 500) {
 
   const detections = await yoloDetector.detect(video);
 
-  console.log(detections);
+eventManager.emit({
+  type: "YOLO_DETECTIONS",
+  detections,
+  inputWidth: video.videoWidth,
+  inputHeight: video.videoHeight,
+});
+
+console.log("📦 YOLO:", {
+  videoWidth: video.videoWidth,
+  videoHeight: video.videoHeight,
+  detections,
+});
 
   const phone = detections.find(
     item =>
       item.className === "cell phone" &&
       item.confidence > 0.45
   );
-
+//phone detection logic
   if (phone) {
+
+  monitoringState.set({
+    phone: true,
+    integrity: Math.min(monitoringState.get().integrity, 60),
+  });
+
+  const now = Date.now();
+
+  if (now - lastPhoneWarningTime >= PHONE_WARNING_COOLDOWN) {
+
+    lastPhoneWarningTime = now;
+
     eventManager.emit({
       type: "PHONE_DETECTED",
       confidence: phone.confidence,
       severity: 8,
     });
 
-    console.log("📱 Phone Detected", phone);
+    console.log("📱 Phone Detected - Warning Sent", phone);
   }
+
+} else {
+
+  monitoringState.set({
+    phone: false,
+  });
+
 }
+  }
 }
 
           } catch (error) {
@@ -185,17 +238,22 @@ if (now - lastYoloTime > 500) {
    return () => {
   clearInterval(intervalId);
 
+  browserMonitor.dispose();   // 👈 Add this
+
   faceDetector.dispose();
   faceLandmarker.dispose();
   yoloDetector.dispose();
+
   lastYoloTime = 0;
+  lastPhoneWarningTime = 0;
 
   screeningEngine.reset();
-headPose.reset();
-eyeGaze.reset();
-blinkDetector.reset();
-mouthDetector.reset();
-talkingDetector.reset();
+  headPose.reset();
+  eyeGaze.reset();
+  blinkDetector.reset();
+  mouthDetector.reset();
+  talkingDetector.reset();
+  monitoringState.reset();
 };
   }, [videoRef]);
 }
