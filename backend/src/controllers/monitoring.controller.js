@@ -10,7 +10,6 @@ const monitoringService = require("../services/monitoring.service");
 const logMonitoringEvent = async (req, res) => {
   try {
     const { attemptId, eventType, metadata } = req.body;
-
     // Validate Request
     if (!attemptId || !eventType) {
       return res.status(400).json({
@@ -29,17 +28,7 @@ const logMonitoringEvent = async (req, res) => {
 
  // Find Student Attempt
 
- console.log("========== DEBUG ==========");
-console.log("Request Attempt ID:", attemptId);
-
-const attempts = await Attempt.find({}, "_id status");
-
-console.log("Available Attempts:", attempts);
-
-const attempt = await Attempt.findById(attemptId);
-
-console.log("Found Attempt:", attempt);
-console.log("===========================");
+ const attempt = await Attempt.findById(attemptId);
 
 if (!attempt) {
   return res.status(404).json({

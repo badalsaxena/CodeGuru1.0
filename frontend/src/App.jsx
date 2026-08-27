@@ -7,6 +7,7 @@ import DarkVeil from "@/components/ui/Darkveil";
 import TeacherPage from "@/pages/TeacherPage";
 import StudentPage from "@/pages/StudentPage";
 import AdminPage from "@/pages/AdminPage";
+import CameraPreview from "@/components/screening/CameraPreview";
 
 const App = () => {
   const [showAuth, setShowAuth] = useState(false);
@@ -30,22 +31,20 @@ const App = () => {
   
 
   if (view === "teacher") {
-    return (
-      <div className="relative min-h-screen bg-zinc-950">
-       
-        <TeacherPage />
-      </div>
-    );
-  }
+  return (
+    <div className="relative min-h-screen bg-zinc-950">
+      <TeacherPage />
+    </div>
+  );
+}
 
   if (view === "student") {
-    return (
-      <div className="relative min-h-screen bg-zinc-950">
-       
-        <StudentPage />
-      </div>
-    );
-  }
+  return (
+    <div className="relative min-h-screen bg-zinc-950">
+      <StudentPage />
+    </div>
+  );
+}
 
   if (view === "admin") {
     return (

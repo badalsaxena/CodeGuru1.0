@@ -52,6 +52,8 @@ const StudentPage = () => {
 
   const [assessment, setAssessment] = useState(null);
 const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+const [attemptId, setAttemptId] = useState(null);
+const [startTime, setStartTime] = useState(null);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -161,8 +163,17 @@ const dashboardStats = studentStats.map((card) => {
     }
 
     try {
-      await startAssessment(exam._id);
-      const data = await getStudentAssessmentById(exam._id);
+  const startData = await startAssessment(exam._id);
+  const newAttemptId = startData?.attemptId;
+
+  if (!newAttemptId) {
+    throw new Error("Attempt ID was not returned by backend.");
+  }
+
+  setAttemptId(newAttemptId);
+  setStartTime(startData?.startTime);
+
+  const data = await getStudentAssessmentById(exam._id);
       const assessment = data.assessment;
       const firstQuestion = assessment?.questions?.[0];
       setAssessment(assessment);
@@ -177,8 +188,16 @@ setCurrentQuestionIndex(0);
       setEditorQuestion(firstQuestion);
       setEditorAssessmentId(assessment._id);
     } catch (err) {
-      alert(getErrorMessage(err, "Failed to start assessment."));
-    }
+  if (err?.response?.status === 403) {
+    alert(
+      err?.response?.data?.message ||
+      "You cannot retake an assessment that was blocked."
+    );
+    return;
+  }
+
+  alert(getErrorMessage(err, "Failed to start assessment."));
+}
   };
 
   if (!isStudent) {
@@ -194,6 +213,8 @@ setCurrentQuestionIndex(0);
         setCurrentQuestionIndex={setCurrentQuestionIndex}
         setEditorQuestion={setEditorQuestion}
         assessmentId={editorAssessmentId}
+        attemptId={attemptId}
+        startTime={startTime}
         onBack={() => {
           setEditorQuestion(null);
           setEditorAssessmentId(null);

@@ -29,10 +29,10 @@ const attemptSchema = new mongoose.Schema(
 
     // Attempt Status
     status: {
-      type: String,
-      enum: ["in_progress", "submitted", "expired"],
-      default: "in_progress",
-    },
+    type: String,
+    enum: ["in_progress", "submitted", "expired", "blocked"],
+    default: "in_progress",
+  },
 
     // Final Score
     score: {
@@ -179,6 +179,8 @@ lastMonitoringEvent: {
     "LOOKING_AWAY",
     "IDENTITY_MISMATCH",
     "VOICE_DETECTED",
+    "PHONE_DETECTED",
+    "YOLO_DETECTIONS",
   ],
   default: null,
 },

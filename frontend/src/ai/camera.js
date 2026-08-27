@@ -19,9 +19,16 @@ class CameraManager {
       });
 
       videoElement.srcObject = this.stream;
-      await videoElement.play();
 
-      return this.stream;
+      await new Promise((resolve) => {
+  videoElement.onloadedmetadata = resolve;
+     });
+
+    await videoElement.play();
+
+      console.log("✅ Camera Started");
+
+    return this.stream;
     } catch (error) {
       console.error("Unable to access camera:", error);
       throw error;

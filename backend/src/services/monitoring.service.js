@@ -15,18 +15,15 @@ const WARNING_RULES = {
   LOOKING_AWAY: 3,
   IDENTITY_MISMATCH: 3,
   VOICE_DETECTED: 2,
+  TALKING: 2,
+  PHONE_DETECTED: 3,
 };
 
 // ==============================
 // Critical Violation Limits
 // ==============================
 
-const CRITICAL_LIMITS = {
-  NO_FACE: 2,
-  MULTIPLE_FACE: 2,
-  IDENTITY_MISMATCH: 2,
-};
-
+const CRITICAL_LIMITS = {};
 const MAX_WARNINGS = 10;
 
 
@@ -47,6 +44,8 @@ const AI_EVENTS = [
   "LOOKING_AWAY",
   "IDENTITY_MISMATCH",
   "VOICE_DETECTED",
+  "TALKING",
+  "PHONE_DETECTED",
 ];
 
 const WARNING_EVENTS = [
@@ -211,30 +210,8 @@ return attempt;
 // ==============================
 
 checkCriticalViolations(attempt, eventType) {
-
-  switch (eventType) {
-
-    case "NO_FACE":
-      if (attempt.noFaceCount >= CRITICAL_LIMITS.NO_FACE) {
-        this.blockStudent(attempt);
-      }
-      break;
-
-    case "MULTIPLE_FACE":
-      if (attempt.multipleFaceCount >= CRITICAL_LIMITS.MULTIPLE_FACE) {
-      this.blockStudent(attempt);
-      }
-      break;
-
-    case "IDENTITY_MISMATCH":
-      if (attempt.identityMismatchCount >= CRITICAL_LIMITS.IDENTITY_MISMATCH) {
-       this.blockStudent(attempt);
-      }
-      break;
-
-    default:
-      break;
-  }
+  // Critical violation limits are currently disabled.
+  // Assessment is blocked only when warningCount reaches MAX_WARNINGS.
 
   return attempt;
 }
@@ -272,6 +249,7 @@ blockStudent(attempt) {
   if (!attempt.isBlocked) {
     attempt.isBlocked = true;
     attempt.blockedAt = new Date();
+    attempt.status = "blocked";
   }
 
   return attempt;

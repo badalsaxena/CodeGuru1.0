@@ -1,11 +1,9 @@
-import axios from "axios";
-
-const API_BASE = "http://localhost:5000/api/v1";
+import api from "../utils/api";
 
 export async function sendMonitoringEvent(payload) {
   try {
-    const response = await axios.post(
-      `${API_BASE}/monitoring/event`,
+    const response = await api.post(
+      "/monitoring/event",
       payload
     );
 
